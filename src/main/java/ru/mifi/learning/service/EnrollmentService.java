@@ -24,6 +24,7 @@ import ru.mifi.learning.mapper.CourseMapper;
 import ru.mifi.learning.mapper.EnrollmentMapper;
 import ru.mifi.learning.repository.CourseRepository;
 import ru.mifi.learning.repository.EnrollmentRepository;
+import ru.mifi.learning.repository.PageRequestValidator;
 import ru.mifi.learning.repository.UserRepository;
 import ru.mifi.learning.service.event.StudentEnrolledEvent;
 
@@ -33,6 +34,7 @@ import ru.mifi.learning.service.event.StudentEnrolledEvent;
 @Transactional(readOnly = true)
 public class EnrollmentService {
     private final EnrollmentRepository enrollments;
+    private final PageRequestValidator pageRequests;
     private final CourseRepository courses;
     private final UserRepository users;
     private final Clock clock;
@@ -78,6 +80,7 @@ public class EnrollmentService {
     }
 
     public PageResponse<EnrolledStudentResponse> students(long id, Pageable pageable) {
+        pageRequests.validate(Enrollment.class, pageable);
         var page = enrollments.findWithStudentByCourseId(id, pageable);
         if (page.isEmpty() && !courses.existsById(id)) {
             throw NotFoundException.of("Course", id);

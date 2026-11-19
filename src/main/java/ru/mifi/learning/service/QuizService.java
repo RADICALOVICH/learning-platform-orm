@@ -58,8 +58,11 @@ public class QuizService {
     }
 
     public StudentQuizView moduleQuiz(long id) {
-        return mapper.student(
-                quizzes.findWithQuestionsByModuleId(id).orElseThrow(() -> NotFoundException.of("Quiz", id)));
+        var quiz = quizzes.findWithQuestionsByModuleId(id)
+                .orElseThrow(() -> modules.existsById(id)
+                        ? NotFoundException.quizForModule(id)
+                        : NotFoundException.of("Module", id));
+        return mapper.student(quiz);
     }
 
     public StudentQuizView student(long id) {

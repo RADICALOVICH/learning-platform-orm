@@ -14,6 +14,10 @@ public interface AssignmentRepository extends JpaRepository<Assignment, Long> {
     @Query("select a from Assignment a where a.id=:id")
     Optional<Assignment> lockById(long id);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select a from Assignment a where a.id = (select s.assignment.id from Submission s where s.id = :id)")
+    Optional<Assignment> lockBySubmissionId(long id);
+
     List<Assignment> findByLessonId(Long lessonId);
 
     @Query("select a.lesson.module.course.id from Assignment a where a.id = :id")

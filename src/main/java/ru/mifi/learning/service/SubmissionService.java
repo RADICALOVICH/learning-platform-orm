@@ -70,13 +70,13 @@ public class SubmissionService {
 
     @Transactional
     public SubmissionResponse grade(long id, GradeRequest request) {
+        var assignment = assignments.lockBySubmissionId(id).orElseThrow(() -> NotFoundException.of("Submission", id));
         var submission = require(id);
-        long assignmentId = submission.getAssignment().getId();
-        assignments.lockById(assignmentId).orElseThrow(() -> NotFoundException.of("Assignment", assignmentId));
-        submission.grade(request.score(), request.feedback(), clock.instant());
-        log.info("Оценено решение id={}", id);
-        events.publishEvent(new SubmissionGradedEvent(
-                id, submission.getStudent().getId(), submission.getAssignment().getId()));
+        if (submission.grade(request.score(), request.feedback(), clock.instant())) {
+            log.info("Оценено решение id={}", id);
+            events.publishEvent(
+                    new SubmissionGradedEvent(id, submission.getStudent().getId(), assignment.getId()));
+        }
         return mapper.submission(submission);
     }
 

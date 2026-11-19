@@ -18,6 +18,7 @@ import ru.mifi.learning.mapper.UserMapper;
 import ru.mifi.learning.repository.CourseRepository;
 import ru.mifi.learning.repository.CourseReviewRepository;
 import ru.mifi.learning.repository.EnrollmentRepository;
+import ru.mifi.learning.repository.PageRequestValidator;
 import ru.mifi.learning.repository.QuizSubmissionRepository;
 import ru.mifi.learning.repository.SubmissionRepository;
 import ru.mifi.learning.repository.UserRepository;
@@ -28,6 +29,7 @@ import ru.mifi.learning.repository.UserRepository;
 @Transactional(readOnly = true)
 public class UserService {
     private final UserRepository users;
+    private final PageRequestValidator pageRequests;
     private final CourseRepository courses;
     private final EnrollmentRepository enrollments;
     private final SubmissionRepository submissions;
@@ -48,6 +50,7 @@ public class UserService {
     }
 
     public PageResponse<UserResponse> list(Role role, Pageable pageable) {
+        pageRequests.validate(User.class, pageable);
         Page<User> page = role == null ? users.findAll(pageable) : users.findAllByRole(role, pageable);
         return PageResponse.from(page.map(mapper::toResponse));
     }

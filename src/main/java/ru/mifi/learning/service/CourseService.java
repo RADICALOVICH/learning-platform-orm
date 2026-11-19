@@ -32,6 +32,7 @@ import ru.mifi.learning.repository.CourseModuleRepository;
 import ru.mifi.learning.repository.CourseRepository;
 import ru.mifi.learning.repository.CourseReviewRepository;
 import ru.mifi.learning.repository.EnrollmentRepository;
+import ru.mifi.learning.repository.PageRequestValidator;
 import ru.mifi.learning.repository.QuizRepository;
 import ru.mifi.learning.repository.QuizSubmissionRepository;
 import ru.mifi.learning.repository.SubmissionRepository;
@@ -46,6 +47,7 @@ import ru.mifi.learning.repository.spec.CourseSpecifications;
 @Transactional(readOnly = true)
 public class CourseService {
     private final CourseRepository courses;
+    private final PageRequestValidator pageRequests;
     private final UserRepository users;
     private final CategoryRepository categories;
     private final TagRepository tags;
@@ -94,6 +96,7 @@ public class CourseService {
 
     public PageResponse<CourseSummaryResponse> list(
             Long categoryId, Long teacherId, String tag, CourseStatus status, String q, Pageable pageable) {
+        pageRequests.validate(Course.class, pageable);
         return PageResponse.from(
                 courses.findAll(CourseSpecifications.search(categoryId, teacherId, tag, status, q), pageable)
                         .map(mapper::summary));

@@ -4,12 +4,14 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.mifi.learning.domain.entity.Notification;
 import ru.mifi.learning.dto.common.PageResponse;
 import ru.mifi.learning.dto.notification.NotificationResponse;
 import ru.mifi.learning.dto.notification.ReadAllResponse;
 import ru.mifi.learning.exception.NotFoundException;
 import ru.mifi.learning.mapper.NotificationMapper;
 import ru.mifi.learning.repository.NotificationRepository;
+import ru.mifi.learning.repository.PageRequestValidator;
 import ru.mifi.learning.repository.UserRepository;
 
 @Service
@@ -17,10 +19,12 @@ import ru.mifi.learning.repository.UserRepository;
 @Transactional(readOnly = true)
 public class NotificationService {
     private final NotificationRepository notifications;
+    private final PageRequestValidator pageRequests;
     private final UserRepository users;
     private final NotificationMapper mapper;
 
     public PageResponse<NotificationResponse> list(long userId, boolean unreadOnly, Pageable pageable) {
+        pageRequests.validate(Notification.class, pageable);
         var page = notifications.findByRecipientId(userId, unreadOnly, pageable);
         if (page.isEmpty()) requireUser(userId);
         return PageResponse.from(page.map(mapper::response));

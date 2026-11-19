@@ -23,6 +23,7 @@ import org.springframework.web.method.annotation.HandlerMethodValidationExceptio
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 import ru.mifi.learning.exception.BusinessRuleException;
 import ru.mifi.learning.exception.ConflictException;
+import ru.mifi.learning.exception.InvalidPageRequestException;
 import ru.mifi.learning.exception.NotFoundException;
 
 @Slf4j
@@ -123,6 +124,11 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     @ExceptionHandler(PropertyReferenceException.class)
     public ProblemDetail invalidSort() {
         return problem(HttpStatus.BAD_REQUEST, "INVALID_SORT", "Указано неизвестное поле сортировки");
+    }
+
+    @ExceptionHandler(InvalidPageRequestException.class)
+    public ProblemDetail invalidPageRequest(InvalidPageRequestException ex) {
+        return problem(HttpStatus.BAD_REQUEST, ex.getCode(), ex.getMessage());
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)

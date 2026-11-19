@@ -161,11 +161,16 @@ class HappyPathE2EIT extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("Неизвестное поле сортировки возвращает 400 для списков уведомлений, записей и отзывов")
+    @DisplayName("Списки отклоняют неизвестные поля и сортировку через коллекции")
     void invalidSort() {
         long id = user("reader", "STUDENT");
         long course = data.publishedCourseWithLessons(1).getId();
         for (String path : List.of(
+                "/users?sort=coursesTaught.title",
+                "/courses?sort=modules.title",
+                "/users/" + id + "/notifications?sort=recipient.enrollments.id",
+                "/courses/" + course + "/enrollments?sort=course.modules.id",
+                "/courses/" + course + "/reviews?sort=student.enrollments.id",
                 "/users/" + id + "/notifications?sort=unknown&unreadOnly=true",
                 "/users/" + id + "/notifications?sort=unknown&unreadOnly=false",
                 "/courses/" + course + "/enrollments?sort=unknown",
@@ -178,6 +183,31 @@ class HappyPathE2EIT extends AbstractIntegrationTest {
             assertThat(response.getStatusCode().value()).as(path).isEqualTo(400);
             assertThat(response.getBody().get("code").asText()).isEqualTo("INVALID_SORT");
         }
+    }
+
+    @Test
+    @DisplayName("У курса с двумя тегами одна позиция в каталоге, сортировка по преподавателю работает")
+    void courseSortCardinality() {
+        var first = data.publishedCourseWithLessons(1);
+        var second = data.publishedCourseWithLessons(1);
+        exchange(HttpMethod.PUT, "/courses/" + first.getId() + "/tags", Map.of("names", List.of("a", "b")), 200, null);
+        var error = exchange(HttpMethod.GET, "/courses?size=1&sort=tags.name", null, 400, null);
+        assertThat(error.get("code").asText()).isEqualTo("INVALID_SORT");
+
+        String catalog = "/courses?size=1&sort=teacher.id&sort=id";
+        var page = get(catalog);
+        assertThat(page.get("totalElements").asLong()).isEqualTo(2);
+        assertThat(page.at("/content/0/id").asLong()).isEqualTo(first.getId());
+        assertThat(get(catalog + "&page=1").at("/content/0/id").asLong()).isEqualTo(second.getId());
+    }
+
+    @Test
+    @DisplayName("Постраничный каталог принимает предельное смещение JPA и отклоняет большее")
+    void pageOffsetLimit() {
+        var last = get("/courses?page=2147483647&size=1");
+        assertThat(last.get("content").size()).isZero();
+        var error = exchange(HttpMethod.GET, "/courses?page=1073741824&size=2", null, 400, null);
+        assertThat(error.get("code").asText()).isEqualTo("INVALID_PAGE_OFFSET");
     }
 
     private long user(String name, String role) {

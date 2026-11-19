@@ -35,6 +35,28 @@ class CourseControllerTest {
     }
 
     @Test
+    @DisplayName("Дробный ID преподавателя отклоняется до создания курса")
+    void fractionalTeacherId() throws Exception {
+        mvc.perform(post("/api/courses").contentType(MediaType.APPLICATION_JSON).content("""
+                {"title":"Java","teacherId":1.9,"categoryId":2}
+                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("MALFORMED_REQUEST"));
+        verifyNoInteractions(service);
+    }
+
+    @Test
+    @DisplayName("Фильтры каталога принимают только положительные идентификаторы")
+    void invalidIdFilter() throws Exception {
+        for (String filter : java.util.List.of("categoryId", "teacherId")) {
+            mvc.perform(get("/api/courses").param(filter, "0"))
+                    .andExpect(status().isBadRequest())
+                    .andExpect(jsonPath("$.errors[0].field").value(filter));
+        }
+        verifyNoInteractions(service);
+    }
+
+    @Test
     @DisplayName("Карточка отсутствующего курса возвращает 404")
     void missing() throws Exception {
         when(service.get(7)).thenThrow(NotFoundException.of("Course", 7));

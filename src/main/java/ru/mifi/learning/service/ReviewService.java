@@ -16,12 +16,14 @@ import ru.mifi.learning.mapper.ReviewMapper;
 import ru.mifi.learning.repository.CourseRepository;
 import ru.mifi.learning.repository.CourseReviewRepository;
 import ru.mifi.learning.repository.EnrollmentRepository;
+import ru.mifi.learning.repository.PageRequestValidator;
 
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ReviewService {
     private final CourseReviewRepository reviews;
+    private final PageRequestValidator pageRequests;
     private final EnrollmentRepository enrollments;
     private final CourseRepository courses;
     private final ReviewMapper mapper;
@@ -45,6 +47,7 @@ public class ReviewService {
     }
 
     public PageResponse<ReviewResponse> list(long id, Pageable pageable) {
+        pageRequests.validate(CourseReview.class, pageable);
         var rows = reviews.findWithStudentByCourseId(id, pageable);
         if (rows.isEmpty() && !courses.existsById(id)) {
             throw NotFoundException.of("Course", id);

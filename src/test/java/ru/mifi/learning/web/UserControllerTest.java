@@ -1,6 +1,7 @@
 package ru.mifi.learning.web;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -48,6 +49,17 @@ class UserControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(header().string("Location", "http://localhost/api/users/7"))
                 .andExpect(jsonPath("$.id").value(7));
+    }
+
+    @Test
+    @DisplayName("Числовая роль отклоняется до создания пользователя")
+    void numericRole() throws Exception {
+        mvc.perform(post("/api/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(VALID.replace("\"STUDENT\"", "2")))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("MALFORMED_REQUEST"));
+        verifyNoInteractions(users);
     }
 
     @Test

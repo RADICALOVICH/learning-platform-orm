@@ -6,7 +6,7 @@ spring:
   jpa:
     hibernate.ddl-auto: update
     properties.hibernate.generate_statistics: true   # в логе "Session Metrics": сколько SQL на запрос
-app.seed.enabled: true
+app.seed.enabled: ${APP_SEED_ENABLED:true}
 logging.level:
   org.hibernate.SQL: debug
   org.hibernate.orm.jdbc.bind: trace                 # значения параметров

@@ -32,6 +32,19 @@ class QuizServiceIT extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("Поиск теста различает неизвестный модуль и существующий модуль без теста")
+    void missingModuleQuiz() {
+        var module = data.publishedCourseWithLessons(1).getModules().getFirst();
+        assertThatThrownBy(() -> quizzes.moduleQuiz(module.getId()))
+                .hasMessage("В модуле с идентификатором %d нет теста", module.getId())
+                .extracting("code")
+                .isEqualTo("QUIZ_NOT_FOUND");
+        assertThatThrownBy(() -> quizzes.moduleQuiz(Long.MAX_VALUE))
+                .extracting("code")
+                .isEqualTo("MODULE_NOT_FOUND");
+    }
+
+    @Test
     @DisplayName("Тест принимает предельную сумму баллов и отклоняет её превышение при создании и правке")
     void totalPointsLimit() {
         var module = data.publishedCourseWithLessons(1).getModules().getFirst();

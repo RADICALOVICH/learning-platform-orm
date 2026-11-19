@@ -19,6 +19,10 @@ public class NotFoundException extends ApplicationException {
                 "Отметка о прохождении урока %d студентом %d не найдена".formatted(lessonId, studentId));
     }
 
+    public static NotFoundException quizForModule(long moduleId) {
+        return new NotFoundException("QUIZ_NOT_FOUND", "В модуле с идентификатором %d нет теста".formatted(moduleId));
+    }
+
     public static NotFoundException of(String entity, long id) {
         String code = entity.replaceAll("([a-z])([A-Z])", "$1_$2").toUpperCase(Locale.ROOT) + "_NOT_FOUND";
         return new NotFoundException(code, "Объект " + entity + " с идентификатором " + id + " не найден");

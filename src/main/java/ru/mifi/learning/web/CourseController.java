@@ -49,8 +49,8 @@ public class CourseController {
     @GetMapping("/courses")
     @Operation(summary = "Найти курсы")
     public PageResponse<CourseSummaryResponse> list(
-            @RequestParam(required = false) Long categoryId,
-            @RequestParam(required = false) Long teacherId,
+            @RequestParam(required = false) @Positive(message = "Значение должно быть положительным") Long categoryId,
+            @RequestParam(required = false) @Positive(message = "Значение должно быть положительным") Long teacherId,
             @RequestParam(required = false) String tag,
             @RequestParam(required = false) CourseStatus status,
             @RequestParam(required = false) String q,

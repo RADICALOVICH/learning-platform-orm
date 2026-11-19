@@ -12,6 +12,7 @@ import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
 import java.time.Instant;
+import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -69,13 +70,17 @@ public class Submission extends BaseEntity {
         assignment.addSubmission(this);
     }
 
-    public void grade(int score, String feedback, Instant now) {
+    public boolean grade(int score, String feedback, Instant now) {
         if (score < 0 || score > assignment.getMaxScore()) {
             throw new BusinessRuleException("SCORE_OUT_OF_RANGE", "Оценка вне допустимого диапазона");
+        }
+        if (status == SubmissionStatus.GRADED && this.score == score && Objects.equals(this.feedback, feedback)) {
+            return false;
         }
         this.score = score;
         this.feedback = feedback;
         this.gradedAt = now;
         this.status = SubmissionStatus.GRADED;
+        return true;
     }
 }
