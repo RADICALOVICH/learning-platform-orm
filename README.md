@@ -250,7 +250,7 @@ JaCoCo проверяет покрытие **строк** для проекта 
 
 ![Сводный отчёт JaCoCo по пакетам учебной платформы](assets/jacoco.png)
 
-HTML-отчёт открывается локально из `target/site/jacoco/index.html`. Отчёты JUnit находятся в `target/surefire-reports/`. На фазе Maven `verify` также проверяется формат Java-кода. GitLab CI запускает `clean verify` при push и для merge request, сохраняет отчёты Surefire и JaCoCo и после успешных проверок собирает Docker-образ. Для собственного GitLab Runner с Docker executor включите поддержку Docker-in-Docker с TLS и общим томом `/certs/client` для задания и сервиса. Для GitHub предусмотрена аналогичная сборка в Actions. [GitLab CI](.gitlab-ci.yml) · [Настройка runner](https://docs.gitlab.com/ci/docker/docker_in_docker/#docker-in-docker-with-tls-enabled-in-the-docker-executor) · [GitHub Actions](.github/workflows/ci.yml).
+HTML-отчёт открывается локально из `target/site/jacoco/index.html`. Отчёты JUnit находятся в `target/surefire-reports/`. При push и pull request GitHub Actions запускает `./mvnw -B verify`: выполняет тесты, проверяет покрытие и формат Java-кода. Отчёты Surefire и JaCoCo доступны в артефакте `test-reports`. После успешной проверки отдельное задание собирает Docker-образ. [Конфигурация GitHub Actions](.github/workflows/ci.yml).
 
 ## Ограничения и план развития
 
@@ -284,4 +284,4 @@ HTML-отчёт открывается локально из `target/site/jacoco
 | 12. Тестирование | JUnit, Surefire и порог покрытия строк | [Сборка Maven](pom.xml) |
 | 13. Архитектура и качество | DTO, транзакции сервисов и проверяемые планы загрузки | [LazyLoadingLabIT](src/test/java/ru/mifi/learning/repository/LazyLoadingLabIT.java) |
 | 14. Документация | Быстрый старт, ER-диаграмма и исполняемые примеры HTTP | [Демонстрационный сценарий](http/demo.http) |
-| 15. DevOps | Compose, сборка и тесты Maven, сборка Docker-образа | [GitLab CI](.gitlab-ci.yml) · [GitHub Actions](.github/workflows/ci.yml) |
+| 15. DevOps | Compose, сборка и тесты Maven, сборка Docker-образа | [GitHub Actions](.github/workflows/ci.yml) |
