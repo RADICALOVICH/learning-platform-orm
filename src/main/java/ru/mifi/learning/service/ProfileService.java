@@ -24,16 +24,19 @@ public class ProfileService {
         return mapper.toResponse(profiles.findById(userId).orElseThrow(() -> NotFoundException.of("Profile", userId)));
     }
 
+    public record UpsertResult(boolean created, ProfileResponse profile) {}
+
     @Transactional
-    public ProfileResponse upsert(long userId, UpsertProfileRequest request) {
+    public UpsertResult upsert(long userId, UpsertProfileRequest request) {
         // Блокируем существующего родителя даже при первом PUT, когда строки профиля ещё нет.
-        User user = users.findForProfileUpdate(userId).orElseThrow(() -> NotFoundException.of("User", userId));
-        Profile profile = profiles.findById(userId).orElseGet(() -> profiles.save(new Profile(user)));
+        User user = users.lockById(userId).orElseThrow(() -> NotFoundException.of("User", userId));
+        var existing = profiles.findById(userId);
+        Profile profile = existing.orElseGet(() -> profiles.save(new Profile(user)));
         profile.setBio(request.bio());
         profile.setAvatarUrl(request.avatarUrl());
         profile.setPhone(request.phone());
         profile.setCity(request.city());
         profile.setBirthDate(request.birthDate());
-        return mapper.toResponse(profile);
+        return new UpsertResult(existing.isEmpty(), mapper.toResponse(profile));
     }
 }

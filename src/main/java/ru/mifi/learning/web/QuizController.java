@@ -33,6 +33,7 @@ public class QuizController {
 
     @PostMapping("/modules/{id}/quiz")
     @Operation(summary = "Создать тест")
+    @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<TeacherQuizView> create(
             @PathVariable @Positive(message = "Значение должно быть положительным") long id,
             @Valid @RequestBody CreateQuizRequest request) {
@@ -75,6 +76,7 @@ public class QuizController {
 
     @PostMapping("/quizzes/{id}/questions")
     @Operation(summary = "Добавить вопрос")
+    @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<TeacherQuizView> add(
             @PathVariable @Positive(message = "Значение должно быть положительным") long id,
             @Valid @RequestBody QuestionRequest request) {

@@ -40,6 +40,33 @@ class CourseServiceIT extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("Переполнение индекса вложенного модуля или урока отменяет создание всего курса")
+    void nestedOrderLimit() {
+        var template = data.course();
+        var last = new LessonRequest("Последний", null, null, null, Integer.MAX_VALUE);
+        var next = new LessonRequest("Следующий", null, null, null, null);
+        for (var modules : List.of(
+                List.of(
+                        new ModuleInput("Последний", null, Integer.MAX_VALUE, List.of()),
+                        new ModuleInput("Следующий", null, null, List.of())),
+                List.of(new ModuleInput("Раздел", null, null, List.of(last, next))))) {
+            var request = new CreateCourseRequest(
+                    "Переполнение",
+                    null,
+                    template.getCategory().getId(),
+                    template.getTeacher().getId(),
+                    null,
+                    null,
+                    List.of(),
+                    modules);
+            assertThatThrownBy(() -> courses.create(request)).extracting("code").isEqualTo("ORDER_INDEX_EXHAUSTED");
+        }
+        assertThat(courses.list(null, null, null, null, "Переполнение", PageRequest.of(0, 5))
+                        .totalElements())
+                .isZero();
+    }
+
+    @Test
     @DisplayName("Карточка читается одним запросом, структура тремя")
     void createRead() {
         var template = data.course();

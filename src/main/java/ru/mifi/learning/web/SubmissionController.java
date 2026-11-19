@@ -33,6 +33,7 @@ public class SubmissionController {
 
     @PostMapping("/assignments/{id}/submissions")
     @Operation(summary = "Сдать решение")
+    @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<SubmissionResponse> submit(
             @PathVariable @Positive(message = "Значение должно быть положительным") long id,
             @Valid @RequestBody SubmitRequest request) {

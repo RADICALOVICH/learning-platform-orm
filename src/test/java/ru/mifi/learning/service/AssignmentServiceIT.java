@@ -8,6 +8,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import ru.mifi.learning.dto.assignment.AssignmentRequest;
+import ru.mifi.learning.dto.assignment.GradeRequest;
 import ru.mifi.learning.dto.assignment.SubmitRequest;
 import ru.mifi.learning.exception.ConflictException;
 import ru.mifi.learning.support.AbstractIntegrationTest;
@@ -16,6 +17,28 @@ import ru.mifi.learning.support.AbstractIntegrationTest;
 class AssignmentServiceIT extends AbstractIntegrationTest {
     private final AssignmentService assignments;
     private final SubmissionService solutions;
+
+    @Test
+    @DisplayName("Максимум задания можно снизить до выставленной оценки, но не ниже неё")
+    void preserveAwardedGrade() {
+        var course = data.publishedCourseWithLessons(1);
+        long lesson = course.getModules().getFirst().getLessons().getFirst().getId();
+        long student = data.enrollment(course).getStudent().getId();
+        var assignment = assignments.create(lesson, new AssignmentRequest("ДЗ", "Описание", null, 10));
+        var submission = solutions.submit(assignment.id(), new SubmitRequest(student, "Ответ"));
+        solutions.grade(submission.id(), new GradeRequest(8, null));
+        assertThatThrownBy(
+                        () -> assignments.update(assignment.id(), new AssignmentRequest("Другое", "Описание", null, 7)))
+                .extracting("code")
+                .isEqualTo("ASSIGNMENT_MAX_BELOW_GRADE");
+        assertThat(assignments.get(assignment.id())).isEqualTo(assignment);
+        var updated = assignments.update(assignment.id(), new AssignmentRequest("ДЗ", "Описание", null, 8));
+        assertThat(updated.maxScore()).isEqualTo(8);
+        assertThatThrownBy(() -> solutions.grade(submission.id(), new GradeRequest(9, null)))
+                .extracting("code")
+                .isEqualTo("SCORE_OUT_OF_RANGE");
+        assertThat(solutions.get(submission.id()).score()).isEqualTo(8);
+    }
 
     @Test
     @DisplayName("Проекция читает задания студента одним запросом и показывает статус сдачи")

@@ -81,6 +81,21 @@ class UserServiceIT extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("Перевод студента в преподаватели допускается после отписки от всех курсов")
+    void changeStudentRole(@Autowired EnrollmentService enrollments) {
+        var enrollment = data.enrollment(data.publishedCourseWithLessons(1));
+        var student = enrollment.getStudent();
+        var promotion = new UpdateUserRequest(student.getEmail(), student.getFullName(), Role.TEACHER);
+        assertThatThrownBy(() -> users.update(student.getId(), promotion))
+                .isInstanceOf(ConflictException.class)
+                .extracting("code")
+                .isEqualTo("USER_HAS_DEPENDENCIES");
+        assertThat(users.get(student.getId()).role()).isEqualTo(Role.STUDENT);
+        enrollments.unsubscribe(enrollment.getCourse().getId(), student.getId());
+        assertThat(users.update(student.getId(), promotion).role()).isEqualTo(Role.TEACHER);
+    }
+
+    @Test
     @DisplayName("PUT создаёт один профиль и заменяет его поля при повторном запросе")
     void upsertProfile() {
         long id = data.student().getId();
@@ -90,10 +105,12 @@ class UserServiceIT extends AbstractIntegrationTest {
                 .isEqualTo("PROFILE_NOT_FOUND");
         var before = profiles.upsert(
                 id, new UpsertProfileRequest("Биография", null, "123", "Москва", LocalDate.of(2000, 1, 1)));
-        assertThat(before.userId()).isEqualTo(id);
-        assertThat(profiles.get(id)).isEqualTo(before);
+        assertThat(before.created()).isTrue();
+        assertThat(before.profile().userId()).isEqualTo(id);
+        assertThat(profiles.get(id)).isEqualTo(before.profile());
         var update = new UpsertProfileRequest("Правка", null, null, null, null);
         var after = profiles.upsert(id, update);
+        assertThat(after.created()).isFalse();
         assertThat(profiles.upsert(id, update)).isEqualTo(after);
         assertThat(profiles.get(id).city()).isNull();
         assertThat(profileRepository.count()).isOne();
@@ -122,7 +139,10 @@ class UserServiceIT extends AbstractIntegrationTest {
                 return profiles.upsert(id, request);
             });
             start.countDown();
-            assertThat(first.get()).isEqualTo(second.get());
+            var a = first.get();
+            var b = second.get();
+            assertThat(a.profile()).isEqualTo(b.profile());
+            assertThat(a.created()).isNotEqualTo(b.created());
             assertThat(profileRepository.count()).isOne();
         }
     }

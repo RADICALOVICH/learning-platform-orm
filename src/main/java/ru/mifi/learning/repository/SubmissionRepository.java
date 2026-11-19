@@ -19,6 +19,8 @@ public interface SubmissionRepository extends JpaRepository<Submission, Long> {
 
     boolean existsByAssignmentId(Long id);
 
+    boolean existsByAssignmentIdAndScoreGreaterThan(long assignmentId, int score);
+
     boolean existsByAssignmentLessonId(Long id);
 
     boolean existsByAssignmentLessonModuleId(Long id);

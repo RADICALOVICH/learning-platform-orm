@@ -35,6 +35,7 @@ public class ReviewController {
 
     @PostMapping("/courses/{id}/reviews")
     @Operation(summary = "Оставить отзыв")
+    @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<ReviewResponse> create(
             @PathVariable @Positive(message = "Значение должно быть положительным") long id,
             @Valid @RequestBody CreateReviewRequest request) {

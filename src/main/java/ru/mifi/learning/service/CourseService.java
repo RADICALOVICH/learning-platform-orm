@@ -160,7 +160,7 @@ public class CourseService {
     }
 
     private User teacher(long id) {
-        var user = users.findById(id).orElseThrow(() -> NotFoundException.of("User", id));
+        var user = users.lockById(id).orElseThrow(() -> NotFoundException.of("User", id));
         if (user.getRole() == Role.STUDENT) {
             throw new BusinessRuleException("USER_NOT_TEACHER", "Курс может вести преподаватель или администратор");
         }

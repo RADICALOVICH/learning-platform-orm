@@ -54,7 +54,11 @@ public class AssignmentService {
 
     @Transactional
     public AssignmentResponse update(long id, AssignmentRequest request) {
-        var assignment = require(id);
+        var assignment = assignments.lockById(id).orElseThrow(() -> NotFoundException.of("Assignment", id));
+        int maximum = request.effectiveMaxScore();
+        if (submissions.existsByAssignmentIdAndScoreGreaterThan(id, maximum)) {
+            throw new ConflictException("ASSIGNMENT_MAX_BELOW_GRADE", "Максимум задания ниже уже выставленной оценки");
+        }
         apply(assignment, request);
         return mapper.assignment(assignment);
     }
@@ -84,6 +88,6 @@ public class AssignmentService {
         assignment.setTitle(request.title());
         assignment.setDescription(request.description());
         assignment.setDueDate(request.dueDate());
-        assignment.setMaxScore(request.maxScore() == null ? 100 : request.maxScore());
+        assignment.setMaxScore(request.effectiveMaxScore());
     }
 }

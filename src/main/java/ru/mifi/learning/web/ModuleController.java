@@ -31,6 +31,7 @@ public class ModuleController {
 
     @PostMapping("/courses/{id}/modules")
     @Operation(summary = "Создать модуль")
+    @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<ModuleResponse> create(
             @PathVariable @Positive(message = "Значение должно быть положительным") long id,
             @Valid @RequestBody ModuleRequest request) {

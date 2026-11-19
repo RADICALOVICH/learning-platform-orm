@@ -20,6 +20,8 @@ import lombok.Setter;
 import org.hibernate.annotations.Check;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
+import ru.mifi.learning.domain.OrderIndex;
+import ru.mifi.learning.exception.BusinessRuleException;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -68,8 +70,8 @@ public class Quiz extends BaseEntity {
             throw new IllegalArgumentException("Элемент уже принадлежит родителю");
         }
         if (question.getOrderIndex() == null) {
-            question.setOrderIndex(
-                    questions.stream().mapToInt(Question::getOrderIndex).max().orElse(-1) + 1);
+            question.setOrderIndex(OrderIndex.after(
+                    questions.stream().mapToInt(Question::getOrderIndex).max().orElse(-1)));
         }
         question.setQuiz(this);
         questions.add(question);
@@ -83,7 +85,11 @@ public class Quiz extends BaseEntity {
     }
 
     public int totalPoints() {
-        return questions.stream().mapToInt(Question::getPoints).sum();
+        long total = questions.stream().mapToLong(Question::getPoints).sum();
+        if (total > Integer.MAX_VALUE) {
+            throw new BusinessRuleException("INVALID_QUESTION", "Суммарный балл теста слишком велик");
+        }
+        return (int) total;
     }
 
     public List<Question> getQuestions() {

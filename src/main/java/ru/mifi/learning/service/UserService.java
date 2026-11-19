@@ -54,7 +54,10 @@ public class UserService {
 
     @Transactional
     public UserResponse update(long id, UpdateUserRequest request) {
-        User user = requireUser(id);
+        User user = users.lockById(id).orElseThrow(() -> NotFoundException.of("User", id));
+        if (user.getRole() == Role.STUDENT && request.role() != Role.STUDENT && enrollments.existsByStudentId(id)) {
+            throw new ConflictException("USER_HAS_DEPENDENCIES", "Сначала отпишите студента от курсов");
+        }
         if (!user.getEmail().equalsIgnoreCase(request.email().strip())) {
             ensureEmailAvailable(request.email());
         }

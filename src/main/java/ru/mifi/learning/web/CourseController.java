@@ -40,6 +40,7 @@ public class CourseController {
 
     @PostMapping("/courses")
     @Operation(summary = "Создать курс")
+    @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<CourseDetailsResponse> create(@Valid @RequestBody CreateCourseRequest request) {
         var result = service.create(request);
         return ResponseEntity.created(URI.create("/api/courses/" + result.id())).body(result);

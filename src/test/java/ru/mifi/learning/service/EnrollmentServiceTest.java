@@ -60,7 +60,7 @@ class EnrollmentServiceTest {
     @BeforeEach
     void setup() {
         when(courses.lockById(3L)).thenReturn(Optional.of(course));
-        when(users.findById(8L)).thenReturn(Optional.of(student));
+        when(users.lockById(8L)).thenReturn(Optional.of(student));
     }
 
     @Test

@@ -43,7 +43,7 @@ public class EnrollmentService {
     @Transactional
     public EnrollmentResponse enroll(long id, StudentRequest request) {
         var course = courses.lockById(id).orElseThrow(() -> NotFoundException.of("Course", id));
-        var student = users.findById(request.studentId())
+        var student = users.lockById(request.studentId())
                 .orElseThrow(() -> NotFoundException.of("User", request.studentId()));
         if (student.getRole() != Role.STUDENT) {
             throw new BusinessRuleException("USER_NOT_STUDENT", "На курс можно записать только студента");

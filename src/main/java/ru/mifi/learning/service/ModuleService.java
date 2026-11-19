@@ -4,6 +4,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.mifi.learning.domain.OrderIndex;
 import ru.mifi.learning.domain.entity.CourseModule;
 import ru.mifi.learning.dto.course.ModuleRequest;
 import ru.mifi.learning.dto.course.ModuleResponse;
@@ -31,7 +32,8 @@ public class ModuleService {
         var module = new CourseModule(request.title());
         module.setOrderIndex(
                 request.orderIndex() == null
-                        ? modules.findMaxOrderIndexByCourseId(id).orElse(-1) + 1
+                        ? OrderIndex.after(
+                                modules.findMaxOrderIndexByCourseId(id).orElse(-1))
                         : request.orderIndex());
         module.setDescription(request.description());
         course.addModule(module);

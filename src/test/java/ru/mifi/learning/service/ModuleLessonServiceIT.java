@@ -30,6 +30,22 @@ class ModuleLessonServiceIT extends AbstractIntegrationTest {
     private final SubmissionService solutions;
 
     @Test
+    @DisplayName("После максимального индекса автоматическое добавление модуля или урока возвращает конфликт")
+    void orderLimit() {
+        var course = data.publishedCourseWithLessons(1);
+        var last = modules.create(course.getId(), new ModuleRequest("Последний", null, Integer.MAX_VALUE));
+        assertThatThrownBy(() -> modules.create(course.getId(), new ModuleRequest("Следующий", null, null)))
+                .extracting("code")
+                .isEqualTo("ORDER_INDEX_EXHAUSTED");
+        assertThat(modules.list(course.getId())).hasSize(2);
+        lessons.create(last.id(), new LessonRequest("Последний", null, null, null, Integer.MAX_VALUE));
+        assertThatThrownBy(() -> lessons.create(last.id(), new LessonRequest("Следующий", null, null, null, null)))
+                .extracting("code")
+                .isEqualTo("ORDER_INDEX_EXHAUSTED");
+        assertThat(lessons.list(last.id())).hasSize(1);
+    }
+
+    @Test
     @DisplayName("Порядок новых модулей и уроков следует за максимальным индексом")
     void appendEdit() {
         var c = data.publishedCourseWithLessons(1);

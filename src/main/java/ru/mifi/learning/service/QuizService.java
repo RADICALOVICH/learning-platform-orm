@@ -49,6 +49,7 @@ public class QuizService {
         for (var input : request.questions()) {
             quiz.addQuestion(newQuestion(input));
         }
+        quiz.totalPoints();
         return mapper.teacher(quizzes.save(quiz));
     }
 
@@ -87,6 +88,7 @@ public class QuizService {
         var quiz = editable(id);
         var item = newQuestion(input);
         quiz.addQuestion(item);
+        quiz.totalPoints();
         questions.save(item);
         return mapper.teacher(quiz);
     }
@@ -96,6 +98,7 @@ public class QuizService {
         var quiz = parentForEdit(id);
         var item = questions.findById(id).orElseThrow(() -> NotFoundException.of("Question", id));
         apply(item, input);
+        quiz.totalPoints();
         questions.flush();
         return mapper.teacher(quiz);
     }

@@ -4,6 +4,7 @@ import java.util.List;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.mifi.learning.domain.OrderIndex;
 import ru.mifi.learning.domain.entity.Lesson;
 import ru.mifi.learning.dto.course.LessonRequest;
 import ru.mifi.learning.dto.course.LessonResponse;
@@ -44,7 +45,8 @@ public class LessonService {
         var module = modules.lockById(id).orElseThrow(() -> NotFoundException.of("Module", id));
         var lesson = newLesson(request);
         if (lesson.getOrderIndex() == null) {
-            lesson.setOrderIndex(lessons.findMaxOrderIndexByModuleId(id).orElse(-1) + 1);
+            lesson.setOrderIndex(
+                    OrderIndex.after(lessons.findMaxOrderIndexByModuleId(id).orElse(-1)));
         }
         module.addLesson(lesson);
         lessons.save(lesson);

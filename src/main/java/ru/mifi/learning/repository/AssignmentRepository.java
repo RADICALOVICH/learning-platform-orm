@@ -1,13 +1,19 @@
 package ru.mifi.learning.repository;
 
+import jakarta.persistence.LockModeType;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import ru.mifi.learning.domain.entity.Assignment;
 import ru.mifi.learning.repository.projection.StudentAssignment;
 
 public interface AssignmentRepository extends JpaRepository<Assignment, Long> {
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select a from Assignment a where a.id=:id")
+    Optional<Assignment> lockById(long id);
+
     List<Assignment> findByLessonId(Long lessonId);
 
     @Query("select a.lesson.module.course.id from Assignment a where a.id = :id")

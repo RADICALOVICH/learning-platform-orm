@@ -33,6 +33,7 @@ public class CategoryController {
 
     @PostMapping
     @Operation(summary = "Создать категорию")
+    @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<CategoryResponse> create(@Valid @RequestBody CreateCategoryRequest request) {
         CategoryResponse response = service.create(request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequestUri()

@@ -31,6 +31,7 @@ public class AssignmentController {
 
     @PostMapping("/lessons/{id}/assignments")
     @Operation(summary = "Создать задание")
+    @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<AssignmentResponse> create(
             @PathVariable @Positive(message = "Значение должно быть положительным") long id,
             @Valid @RequestBody AssignmentRequest request) {

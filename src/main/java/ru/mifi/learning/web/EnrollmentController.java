@@ -34,6 +34,7 @@ public class EnrollmentController {
 
     @PostMapping("/courses/{id}/enrollments")
     @Operation(summary = "Записать студента")
+    @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<EnrollmentResponse> enroll(
             @PathVariable @Positive(message = "Значение должно быть положительным") long id,
             @Valid @RequestBody StudentRequest request) {

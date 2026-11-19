@@ -31,6 +31,7 @@ public class QuizSubmissionController {
 
     @PostMapping("/quizzes/{id}/submissions")
     @Operation(summary = "Пройти тест")
+    @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<QuizResultResponse> submit(
             @PathVariable @Positive(message = "Значение должно быть положительным") long id,
             @Valid @RequestBody TakeQuizRequest request) {

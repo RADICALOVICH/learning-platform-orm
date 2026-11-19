@@ -31,6 +31,7 @@ public class TagController {
 
     @PostMapping
     @Operation(summary = "Создать тег")
+    @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<TagResponse> create(@Valid @RequestBody CreateTagRequest request) {
         TagResponse response = service.create(request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequestUri()

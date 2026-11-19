@@ -32,6 +32,27 @@ class QuizServiceIT extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("Тест принимает предельную сумму баллов и отклоняет её превышение при создании и правке")
+    void totalPointsLimit() {
+        var module = data.publishedCourseWithLessons(1).getModules().getFirst();
+        var one = question();
+        var high = new QuestionRequest(one.text(), one.type(), Integer.MAX_VALUE - 1, one.options());
+        var two = new QuestionRequest(one.text(), one.type(), 2, one.options());
+        assertThatThrownBy(() -> quizzes.create(
+                        module.getId(), new CreateQuizRequest("Тест", null, null, null, null, List.of(high, two))))
+                .extracting("code")
+                .isEqualTo("INVALID_QUESTION");
+        var quiz = quizzes.create(
+                module.getId(), new CreateQuizRequest("Тест", null, null, null, null, List.of(high, one)));
+        assertThatThrownBy(() -> quizzes.add(quiz.id(), one)).extracting("code").isEqualTo("INVALID_QUESTION");
+        assertThatThrownBy(
+                        () -> quizzes.changeQuestion(quiz.questions().getLast().id(), two))
+                .extracting("code")
+                .isEqualTo("INVALID_QUESTION");
+        assertThat(quizzes.teacher(quiz.id())).isEqualTo(quiz);
+    }
+
+    @Test
     @DisplayName("Создание теста каскадом; у студента нет ключа правильных ответов")
     void views() throws Exception {
         var c = data.publishedCourseWithLessons(1);

@@ -13,7 +13,7 @@ import ru.mifi.learning.domain.enums.Role;
 public interface UserRepository extends JpaRepository<User, Long> {
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select u from User u where u.id = :id")
-    Optional<User> findForProfileUpdate(Long id);
+    Optional<User> lockById(Long id);
 
     Optional<User> findByEmailIgnoreCase(String email);
 

@@ -13,4 +13,8 @@ public record AssignmentRequest(
         Instant dueDate,
 
         @Positive(message = "Значение должно быть положительным")
-        Integer maxScore) {}
+        Integer maxScore) {
+    public int effectiveMaxScore() {
+        return maxScore == null ? 100 : maxScore;
+    }
+}

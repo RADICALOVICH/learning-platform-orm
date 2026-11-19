@@ -18,6 +18,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import ru.mifi.learning.domain.OrderIndex;
 
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
@@ -56,8 +57,8 @@ public class CourseModule extends BaseEntity {
             throw new IllegalArgumentException("Элемент уже принадлежит родителю");
         }
         if (lesson.getOrderIndex() == null) {
-            lesson.setOrderIndex(
-                    lessons.stream().mapToInt(Lesson::getOrderIndex).max().orElse(-1) + 1);
+            lesson.setOrderIndex(OrderIndex.after(
+                    lessons.stream().mapToInt(Lesson::getOrderIndex).max().orElse(-1)));
         }
         lesson.setModule(this);
         lessons.add(lesson);

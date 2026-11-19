@@ -31,6 +31,7 @@ public class LessonController {
 
     @PostMapping("/modules/{id}/lessons")
     @Operation(summary = "Создать урок")
+    @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<LessonResponse> create(
             @PathVariable @Positive(message = "Значение должно быть положительным") long id,
             @Valid @RequestBody LessonRequest request) {

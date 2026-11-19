@@ -1,6 +1,7 @@
 package ru.mifi.learning.web;
 
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Positive;
@@ -27,6 +28,8 @@ public class ProgressController {
 
     @PostMapping("/lessons/{id}/completions")
     @Operation(summary = "Отметить урок")
+    @ApiResponse(responseCode = "201", description = "Первая отметка", useReturnTypeSchema = true)
+    @ApiResponse(responseCode = "200", description = "Урок уже отмечен", useReturnTypeSchema = true)
     public ResponseEntity<LessonProgressResponse> mark(
             @PathVariable @Positive(message = "Значение должно быть положительным") long id,
             @Valid @RequestBody StudentRequest request) {

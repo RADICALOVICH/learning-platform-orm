@@ -38,6 +38,7 @@ public class UserController {
 
     @PostMapping
     @Operation(summary = "Создать пользователя")
+    @ResponseStatus(HttpStatus.CREATED)
     public ResponseEntity<UserResponse> create(@Valid @RequestBody CreateUserRequest request) {
         UserResponse response = service.create(request);
         URI location = ServletUriComponentsBuilder.fromCurrentRequestUri()

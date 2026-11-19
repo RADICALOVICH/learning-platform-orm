@@ -32,6 +32,27 @@ class HappyPathE2EIT extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("Первый PUT профиля возвращает адрес созданного ресурса, повторный обновляет тот же профиль")
+    void upsertProfile() {
+        long id = user("profile", "STUDENT");
+        String path = "/users/" + id + "/profile";
+        var created = http.put()
+                .uri(path)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("city", "Москва"))
+                .retrieve()
+                .toEntity(JsonNode.class);
+        assertThat(created.getStatusCode().value()).isEqualTo(201);
+        assertThat(created.getHeaders().getLocation().getPath()).isEqualTo("/api" + path);
+        assertThat(created.getBody().get("userId").asLong()).isEqualTo(id);
+        assertThat(exchange(HttpMethod.PUT, path, Map.of("city", "Тула"), 200, null)
+                        .get("city")
+                        .asText())
+                .isEqualTo("Тула");
+        assertThat(get(path).get("city").asText()).isEqualTo("Тула");
+    }
+
+    @Test
     @DisplayName("От создания курса до итоговой оценки, завершения и прочтения уведомлений через HTTP")
     void completeCourse() {
         long teacher = user("teacher", "TEACHER");

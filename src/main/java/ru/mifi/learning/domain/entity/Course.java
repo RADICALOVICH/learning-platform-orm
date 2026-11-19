@@ -28,6 +28,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.annotations.BatchSize;
 import org.hibernate.annotations.Check;
+import ru.mifi.learning.domain.OrderIndex;
 import ru.mifi.learning.domain.enums.CourseStatus;
 import ru.mifi.learning.exception.BusinessRuleException;
 
@@ -101,8 +102,8 @@ public class Course extends BaseEntity {
             throw new IllegalArgumentException("Элемент уже принадлежит родителю");
         }
         if (module.getOrderIndex() == null) {
-            module.setOrderIndex(
-                    modules.stream().mapToInt(CourseModule::getOrderIndex).max().orElse(-1) + 1);
+            module.setOrderIndex(OrderIndex.after(
+                    modules.stream().mapToInt(CourseModule::getOrderIndex).max().orElse(-1)));
         }
         module.setCourse(this);
         modules.add(module);

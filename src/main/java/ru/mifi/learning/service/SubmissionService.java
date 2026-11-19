@@ -71,6 +71,8 @@ public class SubmissionService {
     @Transactional
     public SubmissionResponse grade(long id, GradeRequest request) {
         var submission = require(id);
+        long assignmentId = submission.getAssignment().getId();
+        assignments.lockById(assignmentId).orElseThrow(() -> NotFoundException.of("Assignment", assignmentId));
         submission.grade(request.score(), request.feedback(), clock.instant());
         log.info("Оценено решение id={}", id);
         events.publishEvent(new SubmissionGradedEvent(
