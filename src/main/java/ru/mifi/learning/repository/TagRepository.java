@@ -8,6 +8,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import ru.mifi.learning.domain.entity.Tag;
 
 public interface TagRepository extends JpaRepository<Tag, Long> {
+    boolean existsByName(String name);
+
     List<Tag> findByNameIn(Collection<String> names);
 
     @EntityGraph(attributePaths = "courses")
