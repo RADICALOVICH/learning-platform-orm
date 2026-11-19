@@ -1,9 +1,11 @@
 package ru.mifi.learning.repository;
 
+import jakarta.persistence.LockModeType;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import ru.mifi.learning.domain.entity.Quiz;
 import ru.mifi.learning.repository.projection.ModuleQuizId;
@@ -26,4 +28,11 @@ public interface QuizRepository extends JpaRepository<Quiz, Long> {
     Optional<Long> findCourseIdById(Long id);
 
     long countByModuleCourseId(Long courseId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select q from Quiz q where q.id=:id")
+    Optional<Quiz> lockById(long id);
+
+    @EntityGraph(attributePaths = "questions")
+    Optional<Quiz> findWithQuestionsByModuleId(long moduleId);
 }

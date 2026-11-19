@@ -1,10 +1,12 @@
 package ru.mifi.learning.repository;
 
+import jakarta.persistence.LockModeType;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
 import ru.mifi.learning.domain.entity.Enrollment;
 import ru.mifi.learning.domain.enums.EnrollmentStatus;
@@ -31,4 +33,8 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
     boolean existsByCourseId(Long courseId);
 
     boolean existsByStudentId(Long studentId);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select e from Enrollment e where e.student.id=:studentId and e.course.id=:courseId")
+    Optional<Enrollment> lockByStudentAndCourse(long studentId, long courseId);
 }

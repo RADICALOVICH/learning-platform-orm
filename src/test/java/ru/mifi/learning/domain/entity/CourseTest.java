@@ -50,4 +50,18 @@ class CourseTest {
         assertThatThrownBy(course::publish).isInstanceOf(BusinessRuleException.class);
         assertThat(course.getStatus()).isEqualTo(CourseStatus.ARCHIVED);
     }
+
+    @Test
+    @DisplayName("Назначение и снятие тега синхронизирует обе стороны связи")
+    void synchronizeTags() {
+        var course = new Course("ORM", new Category("Java"), new User("t@example.test", "Ирина", Role.TEACHER));
+        var tag = new Tag("ORM");
+        course.addTag(tag);
+        course.addTag(tag);
+        assertThat(tag.getCourses()).containsExactly(course);
+        assertThat(course.getTags()).containsExactly(tag);
+        course.removeTag(tag);
+        assertThat(tag.getCourses()).isEmpty();
+        assertThat(course.getTags()).isEmpty();
+    }
 }
