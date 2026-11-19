@@ -8,13 +8,18 @@ import org.springframework.data.jpa.repository.Query;
 import ru.mifi.learning.domain.entity.Notification;
 
 public interface NotificationRepository extends JpaRepository<Notification, Long> {
-    @Query("""
-            select n from Notification n where n.recipient.id = :recipientId and (:unreadOnly = false or n.read = false)
-            """)
-    Page<Notification> findByRecipientId(Long recipientId, boolean unreadOnly, Pageable pageable);
+    Page<Notification> findByRecipientId(Long recipientId, Pageable pageable);
+
+    Page<Notification> findByRecipientIdAndReadFalse(Long recipientId, Pageable pageable);
+
+    default Page<Notification> findByRecipientId(Long recipientId, boolean unreadOnly, Pageable pageable) {
+        return unreadOnly
+                ? findByRecipientIdAndReadFalse(recipientId, pageable)
+                : findByRecipientId(recipientId, pageable);
+    }
 
     @Modifying(clearAutomatically = true, flushAutomatically = true)
     @Query(
-            "update Notification n set n.read = true, n.version = n.version + 1 where n.recipient.id = :recipientId and n.read = false")
+            "update Notification n set n.read = true, n.updatedAt = instant, n.version = n.version + 1 where n.recipient.id = :recipientId and n.read = false")
     int markAllRead(Long recipientId);
 }

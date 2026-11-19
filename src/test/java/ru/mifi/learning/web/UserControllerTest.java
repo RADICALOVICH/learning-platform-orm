@@ -10,13 +10,17 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.List;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.data.mapping.PropertyReferenceException;
+import org.springframework.data.util.TypeInformation;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
+import ru.mifi.learning.domain.entity.User;
 import ru.mifi.learning.domain.enums.Role;
 import ru.mifi.learning.dto.user.UserResponse;
 import ru.mifi.learning.exception.ConflictException;
@@ -85,6 +89,16 @@ class UserControllerTest {
         mvc.perform(post("/api/users").contentType(MediaType.APPLICATION_JSON).content(VALID))
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.code").value("USER_EMAIL_TAKEN"));
+    }
+
+    @Test
+    @DisplayName("Несуществующее поле сортировки возвращает 400 INVALID_SORT")
+    void invalidSort() throws Exception {
+        when(users.list(any(), any()))
+                .thenThrow(new PropertyReferenceException("unknown", TypeInformation.of(User.class), List.of()));
+        mvc.perform(get("/api/users").param("sort", "unknown"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("INVALID_SORT"));
     }
 
     @Test

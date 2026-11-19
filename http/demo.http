@@ -1,0 +1,95 @@
+# IntelliJ HTTP Client / VS Code REST Client. Запускайте запросы сверху вниз.
+@api = http://localhost:8080/api
+# Значения на новом томе. Для существующего каталога сверьте их по первым трём запросам.
+@teacher = 2
+@student = 6
+@category = 1
+# Заполняйте эти переменные по ответам своего запуска (подсказки над запросами).
+@course = 0
+@module = 0
+@lesson = 0
+@assignment = 0
+@submission = 0
+@quiz = 0
+@question = 0
+@option = 0
+@attempt = 0
+@notification = 0
+
+### Преподаватели
+GET {{api}}/users?role=TEACHER
+
+### Студенты
+GET {{api}}/users?role=STUDENT
+
+### Категории
+GET {{api}}/categories
+
+### Создать отдельный учебный курс. Скопируйте id в course
+POST {{api}}/courses
+Content-Type: application/json
+
+{"title":"Практикум по ключам","teacherId":{{teacher}},"categoryId":{{category}},"modules":[{"title":"Модель","lessons":[{"title":"Первичный ключ"}]}]}
+
+### Скопируйте идентификаторы первого модуля и его урока в module и lesson
+GET {{api}}/courses/{{course}}/structure
+
+### Опубликовать курс
+POST {{api}}/courses/{{course}}/publish
+
+### Записать студента
+POST {{api}}/courses/{{course}}/enrollments
+Content-Type: application/json
+
+{"studentId":{{student}}}
+
+### Выдать задание. Скопируйте id в assignment
+POST {{api}}/lessons/{{lesson}}/assignments
+Content-Type: application/json
+
+{"title":"Ключ книги","description":"Назовите аннотацию для первичного ключа","maxScore":10}
+
+### Отправить решение. Скопируйте id в submission
+POST {{api}}/assignments/{{assignment}}/submissions
+Content-Type: application/json
+
+{"studentId":{{student}},"content":"@Id"}
+
+### Выставить оценку
+PUT {{api}}/submissions/{{submission}}/grade
+Content-Type: application/json
+
+{"score":10,"feedback":"Верно"}
+
+### Добавить тест. Скопируйте id в quiz
+POST {{api}}/modules/{{module}}/quiz
+Content-Type: application/json
+
+{"title":"Проверка","questions":[{"text":"Какая аннотация задаёт ключ?","type":"SINGLE_CHOICE","options":[{"text":"@Id","correct":true},{"text":"@Table","correct":false}]}]}
+
+### Студенческий вид. Скопируйте id вопроса и варианта @Id в question и option
+GET {{api}}/quizzes/{{quiz}}
+
+### Отметить урок
+POST {{api}}/lessons/{{lesson}}/completions
+Content-Type: application/json
+
+{"studentId":{{student}}}
+
+### Сдать тест. Скопируйте id в attempt
+POST {{api}}/quizzes/{{quiz}}/submissions
+Content-Type: application/json
+
+{"studentId":{{student}},"answers":[{"questionId":{{question}},"optionIds":[{{option}}]}]}
+
+### Проверить оценку и выбранный вариант
+GET {{api}}/quiz-submissions/{{attempt}}
+
+### Проверить завершение курса
+GET {{api}}/courses/{{course}}/progress/{{student}}
+
+### Открыть непрочитанные уведомления. Скопируйте id уведомления этого курса в notification
+GET {{api}}/users/{{student}}/notifications?unreadOnly=true&size=10
+
+### Отметить выбранное уведомление прочитанным
+PATCH {{api}}/notifications/{{notification}}/read
