@@ -1,0 +1,12 @@
+spring:
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/learning_platform}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  jpa:
+    hibernate.ddl-auto: update
+    properties.hibernate.generate_statistics: true   # в логе "Session Metrics": сколько SQL на запрос
+app.seed.enabled: true
+logging.level:
+  org.hibernate.SQL: debug
+  org.hibernate.orm.jdbc.bind: trace                 # значения параметров

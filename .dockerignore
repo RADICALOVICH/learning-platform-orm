@@ -1,0 +1,11 @@
+.git
+.github
+target
+.env
+.env.*
+docs
+CLAUDE.md
+.claude
+.idea
+.vscode
+.DS_Store

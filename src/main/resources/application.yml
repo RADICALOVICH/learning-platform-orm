@@ -1,0 +1,21 @@
+spring:
+  application.name: learning-platform
+  profiles.default: dev
+  config.import: optional:file:.env[.properties]
+  jpa:
+    open-in-view: false
+    properties:
+      hibernate:
+        jdbc:
+          time_zone: UTC
+          batch_size: 50
+        order_inserts: true
+        order_updates: true
+        format_sql: true
+        query:
+          fail_on_pagination_over_collection_fetch: true
+          in_clause_parameter_padding: true
+springdoc:
+  swagger-ui.path: /swagger-ui.html
+management.endpoints.web.exposure.include: health,info
+app.seed.enabled: false
