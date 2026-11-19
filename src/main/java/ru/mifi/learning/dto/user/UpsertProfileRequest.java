@@ -1,5 +1,6 @@
 package ru.mifi.learning.dto.user;
 
+import jakarta.validation.constraints.PastOrPresent;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 
@@ -15,4 +16,5 @@ public record UpsertProfileRequest(
         @Size(max = 100, message = "Максимальная длина — 100 символов")
         String city,
 
+        @PastOrPresent(message = "Дата рождения не может быть в будущем")
         LocalDate birthDate) {}

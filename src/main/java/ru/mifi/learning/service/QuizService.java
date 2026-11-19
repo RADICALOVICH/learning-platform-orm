@@ -1,6 +1,8 @@
 package ru.mifi.learning.service;
 
-import java.util.List;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.HashMap;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -114,8 +116,13 @@ public class QuizService {
 
     @Transactional
     public void deleteQuestion(long id) {
-        var quiz = parentForEdit(id);
-        quiz.removeQuestion(questions.getReferenceById(id));
+        long quizId = questions.findQuizId(id).orElseThrow(() -> NotFoundException.of("Question", id));
+        var course = courses.lockByQuizId(quizId).orElseThrow(() -> NotFoundException.of("Question", id));
+        var quiz = editable(quizId);
+        quiz.removeQuestion(questions.findById(id).orElseThrow(() -> NotFoundException.of("Question", id)));
+        if (quiz.getQuestions().isEmpty()) {
+            completion.afterContentRemoval(course);
+        }
     }
 
     public StudentQuestionView question(long id) {
@@ -160,9 +167,19 @@ public class QuizService {
         question.setText(input.text());
         question.setType(input.type());
         question.setPoints(input.points() == null ? 1 : input.points());
-        List.copyOf(question.getOptions()).forEach(question::removeOption);
-        for (var option : input.options()) {
-            question.addOption(new AnswerOption(option.text(), option.correct()));
+        var remaining = new HashMap<OptionRequest, ArrayDeque<AnswerOption>>();
+        for (var option : question.getOptions()) {
+            var key = new OptionRequest(option.getText(), option.isCorrect());
+            remaining.computeIfAbsent(key, ignored -> new ArrayDeque<>()).addLast(option);
         }
+        var ordered = new ArrayList<AnswerOption>(input.options().size());
+        for (var requested : input.options()) {
+            var matches = remaining.get(requested);
+            ordered.add(
+                    matches == null || matches.isEmpty()
+                            ? new AnswerOption(requested.text(), requested.correct())
+                            : matches.removeFirst());
+        }
+        question.replaceOptions(ordered);
     }
 }

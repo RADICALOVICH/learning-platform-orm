@@ -7,6 +7,7 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDate;
 import java.util.List;
+import ru.mifi.learning.dto.tag.ValidTagName;
 
 public record CreateCourseRequest(
         @NotBlank(message = "Заполните поле") @Size(max = 200, message = "Максимальная длина — 200 символов")
@@ -25,6 +26,5 @@ public record CreateCourseRequest(
         @Positive(message = "Значение должно быть положительным")
         Integer durationWeeks,
 
-        List<@NotBlank(message = "Заполните поле") @Size(max = 50, message = "Максимальная длина — 50 символов") String>
-                tags,
+        List<@ValidTagName String> tags,
         List<@NotNull(message = "Обязательное поле") @Valid ModuleInput> modules) {}

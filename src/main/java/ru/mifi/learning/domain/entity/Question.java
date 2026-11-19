@@ -60,7 +60,7 @@ public class Question extends BaseEntity {
     private Quiz quiz;
 
     @OneToMany(mappedBy = "question", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
-    @OrderBy("id ASC")
+    @OrderBy("orderIndex ASC, id ASC")
     @BatchSize(size = 50)
     private List<AnswerOption> options = new ArrayList<>();
 
@@ -74,7 +74,17 @@ public class Question extends BaseEntity {
             throw new IllegalArgumentException("Элемент уже принадлежит родителю");
         }
         option.setQuestion(this);
+        option.setOrderIndex(options.isEmpty() ? 0 : options.getLast().getOrderIndex() + 1);
         options.add(option);
+    }
+
+    public void replaceOptions(List<AnswerOption> ordered) {
+        if (ordered.equals(options)) {
+            return;
+        }
+        options.forEach(option -> option.setQuestion(null));
+        options.clear();
+        ordered.forEach(this::addOption);
     }
 
     public void removeOption(AnswerOption option) {

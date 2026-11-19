@@ -1,7 +1,6 @@
 package ru.mifi.learning.service;
 
 import java.util.List;
-import java.util.Locale;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
@@ -175,9 +174,7 @@ public class CourseService {
     }
 
     private void replaceTags(Course course, List<String> names) {
-        var wanted = names.stream()
-                .map(name -> name.strip().toLowerCase(Locale.ROOT))
-                .collect(Collectors.toCollection(TreeSet::new));
+        var wanted = names.stream().map(Tag::normalizeName).collect(Collectors.toCollection(TreeSet::new));
         for (var tag : List.copyOf(course.getTags())) {
             if (!wanted.remove(tag.getName())) {
                 course.removeTag(tag);
@@ -190,8 +187,9 @@ public class CourseService {
             course.addTag(existing);
             wanted.remove(existing.getName());
         }
-        for (var name : wanted) {
-            course.addTag(tags.save(new Tag(name)));
+        if (!wanted.isEmpty()) {
+            wanted.forEach(tags::insertIfMissing);
+            tags.findByNameIn(wanted).forEach(course::addTag);
         }
     }
 }

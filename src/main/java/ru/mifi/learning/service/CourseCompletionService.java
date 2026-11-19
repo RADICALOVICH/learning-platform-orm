@@ -2,6 +2,7 @@ package ru.mifi.learning.service;
 
 import java.time.Clock;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
@@ -38,6 +39,15 @@ public class CourseCompletionService {
         enrollments.lockByStudentAndCourse(event.studentId(), event.courseId()).ifPresent(this::tryComplete);
     }
 
+    @EventListener(ApplicationReadyEvent.class)
+    @Transactional
+    public void reconcileEmptyQuizzes() {
+        // В существующей базе пустой тест мог удерживать готовую запись в статусе ACTIVE.
+        for (long courseId : quizzes.findCourseIdsWithEmptyQuizzesAndActiveStudents()) {
+            completeActiveStudents(courseId, lessons.countByModuleCourseId(courseId));
+        }
+    }
+
     @Transactional
     public void tryComplete(Enrollment enrollment) {
         if (enrollment.getStatus() == EnrollmentStatus.COMPLETED) {
@@ -62,6 +72,10 @@ public class CourseCompletionService {
             }
             return;
         }
+        completeActiveStudents(courseId, totalLessons);
+    }
+
+    private void completeActiveStudents(long courseId, long totalLessons) {
         // Дожидаемся параллельных отметок и сдач перед выборкой готовых к завершению записей.
         if (!enrollments.lockActiveByCourseId(courseId).isEmpty()) {
             completeReady(courseId, null, totalLessons);
@@ -82,7 +96,7 @@ public class CourseCompletionService {
         long studentId = enrollment.getStudent().getId();
         long totalLessons = lessons.countByModuleCourseId(courseId);
         long completedLessons = progress.countByEnrollmentId(enrollment.getId());
-        long totalQuizzes = quizzes.countByModuleCourseId(courseId);
+        long totalQuizzes = quizzes.countRequiredByCourseId(courseId);
         long passedQuizzes = attempts.countPassedQuizzes(studentId, courseId);
         int percent = totalLessons == 0 ? 0 : (int) Math.round(100.0 * completedLessons / totalLessons);
         return new CourseProgressResponse(

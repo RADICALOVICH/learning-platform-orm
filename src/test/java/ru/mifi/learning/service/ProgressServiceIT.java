@@ -12,8 +12,12 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.event.ApplicationEvents;
 import org.springframework.test.context.event.RecordApplicationEvents;
 import ru.mifi.learning.domain.enums.EnrollmentStatus;
+import ru.mifi.learning.domain.enums.QuestionType;
 import ru.mifi.learning.dto.course.LessonRequest;
 import ru.mifi.learning.dto.enrollment.StudentRequest;
+import ru.mifi.learning.dto.quiz.CreateQuizRequest;
+import ru.mifi.learning.dto.quiz.OptionRequest;
+import ru.mifi.learning.dto.quiz.QuestionRequest;
 import ru.mifi.learning.dto.quiz.QuizAnswerRequest;
 import ru.mifi.learning.dto.quiz.TakeQuizRequest;
 import ru.mifi.learning.exception.BusinessRuleException;
@@ -76,6 +80,67 @@ class ProgressServiceIT extends AbstractIntegrationTest {
         assertThat(result.status()).isEqualTo(EnrollmentStatus.COMPLETED);
         assertThat(progress.get(course.getId(), peer.studentId()).status()).isEqualTo(EnrollmentStatus.ACTIVE);
         assertThat(progress.mark(required.getId(), student).created()).isFalse();
+        assertThat(events.stream(CourseCompletedEvent.class)).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("Тест обязателен с первого вопроса и перестаёт учитываться после удаления последнего")
+    void emptyQuizDoesNotBlockCompletion(@Autowired QuizService quizzes, @Autowired ApplicationEvents events) {
+        var course = data.publishedCourseWithLessons(1);
+        var module = course.getModules().getFirst();
+        var lesson = module.getLessons().getFirst();
+        var student = new StudentRequest(data.enrollment(course).getStudent().getId());
+        var peer = new StudentRequest(data.enrollment(course).getStudent().getId());
+        var quiz = quizzes.create(module.getId(), new CreateQuizRequest("Тест", null, null, null, null, List.of()));
+
+        progress.mark(lesson.getId(), student);
+        var initial = progress.get(course.getId(), student.studentId());
+        assertThat(initial.totalQuizzes()).isZero();
+        assertThat(initial.status()).isEqualTo(EnrollmentStatus.COMPLETED);
+
+        var question = new QuestionRequest(
+                "Есть ли вопросы?",
+                QuestionType.SINGLE_CHOICE,
+                1,
+                List.of(new OptionRequest("Да", true), new OptionRequest("Нет", false)));
+        var updated = quizzes.add(quiz.id(), question);
+        progress.mark(lesson.getId(), peer);
+        var before = progress.get(course.getId(), peer.studentId());
+        assertThat(before.totalQuizzes()).isOne();
+        assertThat(before.status()).isEqualTo(EnrollmentStatus.ACTIVE);
+        assertThat(progress.get(course.getId(), student.studentId()).status()).isEqualTo(EnrollmentStatus.COMPLETED);
+
+        quizzes.deleteQuestion(updated.questions().getFirst().id());
+        var after = progress.get(course.getId(), peer.studentId());
+        assertThat(after.totalQuizzes()).isZero();
+        assertThat(after.passedQuizzes()).isZero();
+        assertThat(after.status()).isEqualTo(EnrollmentStatus.COMPLETED);
+        assertThat(events.stream(CourseCompletedEvent.class)).hasSize(2);
+    }
+
+    @Test
+    @DisplayName("При запуске завершаются старые записи, для которых единственной преградой был пустой тест")
+    void reconcileEmptyQuizzesAtStartup(
+            @Autowired CourseCompletionService completion,
+            @Autowired JdbcTemplate jdbc,
+            @Autowired ApplicationEvents events) {
+        var course = data.publishedCourseWithLessons(1);
+        var module = course.getModules().getFirst();
+        data.quizWithQuestions(module, 0);
+        var student = data.enrollment(course);
+        var peer = data.enrollment(course);
+        jdbc.update("""
+                insert into lesson_progress (enrollment_id, lesson_id, completed_at, created_at, updated_at, version)
+                values (?, ?, current_timestamp, current_timestamp, current_timestamp, 0)
+                """, student.getId(), module.getLessons().getFirst().getId());
+
+        completion.reconcileEmptyQuizzes();
+        completion.reconcileEmptyQuizzes();
+
+        assertThat(progress.get(course.getId(), student.getStudent().getId()).status())
+                .isEqualTo(EnrollmentStatus.COMPLETED);
+        assertThat(progress.get(course.getId(), peer.getStudent().getId()).status())
+                .isEqualTo(EnrollmentStatus.ACTIVE);
         assertThat(events.stream(CourseCompletedEvent.class)).hasSize(1);
     }
 

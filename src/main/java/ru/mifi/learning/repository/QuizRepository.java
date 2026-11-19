@@ -27,7 +27,15 @@ public interface QuizRepository extends JpaRepository<Quiz, Long> {
     @Query("select q.module.course.id from Quiz q where q.id = :id")
     Optional<Long> findCourseIdById(Long id);
 
-    long countByModuleCourseId(Long courseId);
+    @Query("select count(q) from Quiz q where q.module.course.id = :courseId and q.questions is not empty")
+    long countRequiredByCourseId(long courseId);
+
+    @Query("""
+            select distinct q.module.course.id from Quiz q where q.questions is empty
+            and exists (select e.id from Enrollment e where e.course = q.module.course and e.status = ACTIVE)
+            order by q.module.course.id
+            """)
+    List<Long> findCourseIdsWithEmptyQuizzesAndActiveStudents();
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select q from Quiz q where q.id=:id")

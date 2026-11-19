@@ -12,6 +12,7 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.ColumnDefault;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
@@ -29,6 +30,11 @@ public class AnswerOption extends BaseEntity {
     @Setter
     @Column(name = "is_correct", nullable = false)
     private boolean correct;
+
+    @Setter(AccessLevel.PACKAGE)
+    @ColumnDefault("0")
+    @Column(nullable = false)
+    private int orderIndex;
 
     @Setter(AccessLevel.PACKAGE)
     @OnDelete(action = OnDeleteAction.CASCADE)

@@ -32,6 +32,33 @@ class QuizServiceIT extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("Повторное сохранение вопроса сохраняет ID вариантов и порядок одинаковых ответов")
+    void replacingOptionsPreservesIdsAndOrder() {
+        var module = data.publishedCourseWithLessons(1).getModules().getFirst();
+        var yes = new OptionRequest("Да", true);
+        var no = new OptionRequest("Нет", false);
+        var other = new OptionRequest("Другое", false);
+        var initial = new QuestionRequest(
+                "Выбор", QuestionType.SINGLE_CHOICE, 1, List.of(yes, no, no, new OptionRequest("Пропустить", false)));
+        var quiz =
+                quizzes.create(module.getId(), new CreateQuizRequest("Тест", null, null, null, null, List.of(initial)));
+        var question = quiz.questions().getFirst();
+        var old = question.options();
+        assertThat(quizzes.changeQuestion(question.id(), initial)).isEqualTo(quiz);
+
+        var edit = new QuestionRequest("Изменённый вопрос", QuestionType.SINGLE_CHOICE, 2, List.of(no, other, no, yes));
+        var updated = quizzes.changeQuestion(question.id(), edit);
+        var options = updated.questions().getFirst().options();
+        assertThat(options.get(0)).isEqualTo(old.get(1));
+        assertThat(options.get(2)).isEqualTo(old.get(2));
+        assertThat(options.get(3)).isEqualTo(old.get(0));
+        assertThat(options.get(1).text()).isEqualTo(other.text());
+        assertThat(options.get(1).id()).isNotNull().isNotEqualTo(old.get(3).id());
+        assertThat(quizzes.teacher(quiz.id())).isEqualTo(updated);
+        assertThat(quizzes.changeQuestion(question.id(), edit)).isEqualTo(updated);
+    }
+
+    @Test
     @DisplayName("Поиск теста различает неизвестный модуль и существующий модуль без теста")
     void missingModuleQuiz() {
         var module = data.publishedCourseWithLessons(1).getModules().getFirst();

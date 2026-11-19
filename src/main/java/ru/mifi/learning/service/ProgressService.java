@@ -3,6 +3,7 @@ package ru.mifi.learning.service;
 import java.time.Clock;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 import ru.mifi.learning.domain.entity.LessonProgress;
 import ru.mifi.learning.domain.entity.LessonProgressId;
@@ -49,6 +50,7 @@ public class ProgressService {
                 .orElseThrow(() -> NotFoundException.completion(lessonId, studentId));
     }
 
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public CourseProgressResponse get(long id, long studentId) {
         return completion.snapshot(enrollments
                 .findByStudentIdAndCourseId(studentId, id)

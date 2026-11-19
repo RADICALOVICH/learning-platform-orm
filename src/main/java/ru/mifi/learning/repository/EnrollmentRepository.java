@@ -37,7 +37,7 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
             select e from Enrollment e
             where e.course.id = :courseId and e.status = ACTIVE and e.id = coalesce(:enrollmentId, e.id)
             and (select count(p) from LessonProgress p where p.enrollment = e) = :totalLessons
-            and not exists (select q.id from Quiz q where q.module.course = e.course
+            and not exists (select q.id from Quiz q where q.module.course = e.course and q.questions is not empty
                 and not exists (select a.id from QuizSubmission a
                     where a.quiz = q and a.student = e.student and a.passed = true))
             """)

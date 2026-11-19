@@ -3,6 +3,7 @@ package ru.mifi.learning.web;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
@@ -50,6 +51,22 @@ class HappyPathE2EIT extends AbstractIntegrationTest {
                         .asText())
                 .isEqualTo("Тула");
         assertThat(get(path).get("city").asText()).isEqualTo("Тула");
+    }
+
+    @Test
+    @DisplayName("Будущая дата рождения отклоняется при создании и обновлении профиля")
+    void validateBirthDate() {
+        String path = "/users/" + user("birthday", "STUDENT") + "/profile";
+        var today = LocalDate.now();
+        var future = Map.of("birthDate", today.plusDays(1).toString());
+        var error = exchange(HttpMethod.PUT, path, future, 400, null);
+        assertThat(error.path("code").asText()).isEqualTo("VALIDATION_FAILED");
+        assertThat(error.at("/errors/0/field").asText()).isEqualTo("birthDate");
+        exchange(HttpMethod.GET, path, null, 404, null);
+
+        exchange(HttpMethod.PUT, path, Map.of("birthDate", today.toString()), 201, null);
+        exchange(HttpMethod.PUT, path, future, 400, null);
+        assertThat(get(path).path("birthDate").asText()).isEqualTo(today.toString());
     }
 
     @Test
@@ -183,6 +200,45 @@ class HappyPathE2EIT extends AbstractIntegrationTest {
             assertThat(response.getStatusCode().value()).as(path).isEqualTo(400);
             assertThat(response.getBody().get("code").asText()).isEqualTo("INVALID_SORT");
         }
+    }
+
+    @Test
+    @DisplayName("Имя тега проверяется после нормализации при создании тега, курса и замене тегов")
+    void normalizedTagNames() {
+        var template = data.publishedCourseWithLessons(1);
+        String path = "/courses/" + template.getId() + "/tags";
+        String boundary = "İ".repeat(25);
+        String normalized = "i\u0307".repeat(25);
+        var tag = created("/tags", Map.of("name", boundary), "/tags/");
+        assertThat(tag.get("name").asText()).isEqualTo(normalized);
+        exchange(HttpMethod.PUT, path, Map.of("names", List.of(boundary)), 200, null);
+
+        String tooLong = boundary + "İ";
+        var tagError = post("/tags", Map.of("name", tooLong), 400);
+        assertThat(tagError.path("code").asText()).isEqualTo("VALIDATION_FAILED");
+        assertThat(tagError.at("/errors/0/field").asText()).isEqualTo("name");
+        var courseError = post(
+                "/courses",
+                Map.of(
+                        "title",
+                        "Курс",
+                        "teacherId",
+                        template.getTeacher().getId(),
+                        "categoryId",
+                        template.getCategory().getId(),
+                        "tags",
+                        List.of(tooLong)),
+                400);
+        assertThat(courseError.path("code").asText()).isEqualTo("VALIDATION_FAILED");
+        var updateError = exchange(HttpMethod.PUT, path, Map.of("names", List.of("новый", tooLong)), 400, null);
+        assertThat(updateError.path("code").asText()).isEqualTo("VALIDATION_FAILED");
+        assertThat(get("/courses/" + template.getId()).at("/tags/0").asText()).isEqualTo(normalized);
+        assertThat(get("/tags").size()).isOne();
+        assertThat(post("/tags", Map.of("name", "a\0b"), 400).path("code").asText())
+                .isEqualTo("VALIDATION_FAILED");
+        String emoji = "🐱".repeat(50);
+        assertThat(created("/tags", Map.of("name", emoji), "/tags/").get("name").asText())
+                .isEqualTo(emoji);
     }
 
     @Test

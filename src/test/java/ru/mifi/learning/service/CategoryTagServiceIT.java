@@ -2,15 +2,21 @@ package ru.mifi.learning.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.awaitility.Awaitility.await;
 
+import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionTemplate;
 import ru.mifi.learning.dto.category.CreateCategoryRequest;
 import ru.mifi.learning.dto.category.UpdateCategoryRequest;
+import ru.mifi.learning.dto.course.CourseTagsRequest;
 import ru.mifi.learning.dto.tag.CreateTagRequest;
 import ru.mifi.learning.exception.ConflictException;
 import ru.mifi.learning.exception.NotFoundException;
@@ -50,6 +56,30 @@ class CategoryTagServiceIT extends AbstractIntegrationTest {
                 .isInstanceOf(ConflictException.class)
                 .extracting("code")
                 .isEqualTo("CATEGORY_IN_USE");
+    }
+
+    @Test
+    @DisplayName("Два курса одновременно получают один новый тег")
+    void concurrentCourseTags(@Autowired CourseService courseService, @Autowired JdbcTemplate jdbc) throws Exception {
+        long firstId = data.publishedCourseWithLessons(1).getId();
+        long secondId = data.publishedCourseWithLessons(1).getId();
+        try (var worker = Executors.newSingleThreadExecutor()) {
+            var second = transactions.execute(tx -> {
+                var blocker = jdbc.queryForObject("select pg_backend_pid()", Integer.class);
+                courseService.tags(firstId, new CourseTagsRequest(List.of(" JPA ")));
+                var waiting = worker.submit(() -> courseService.tags(secondId, new CourseTagsRequest(List.of("jpa"))));
+                // Фиксируем первый тег только после того, как вторая транзакция попыталась вставить его.
+                await().atMost(Duration.ofSeconds(10))
+                        .until(() -> jdbc.queryForObject(
+                                "select exists(select 1 from pg_stat_activity where ? = any(pg_blocking_pids(pid)))",
+                                Boolean.class,
+                                blocker));
+                return waiting;
+            });
+            assertThat(second.get(10, TimeUnit.SECONDS).tags()).containsExactly("jpa");
+        }
+        assertThat(courseService.get(firstId).tags()).containsExactly("jpa");
+        assertThat(tags.list()).extracting("name").containsExactly("jpa");
     }
 
     @Test
