@@ -3,6 +3,7 @@ package ru.mifi.learning.mapper;
 import java.util.Comparator;
 import org.springframework.stereotype.Component;
 import ru.mifi.learning.domain.entity.AnswerOption;
+import ru.mifi.learning.domain.entity.Question;
 import ru.mifi.learning.domain.entity.Quiz;
 import ru.mifi.learning.domain.entity.QuizSubmission;
 import ru.mifi.learning.dto.quiz.AnswerResult;
@@ -50,16 +51,18 @@ public class QuizMapper {
                 quiz.getTimeLimitMinutes(),
                 quiz.getPassingScorePercent(),
                 quiz.getMaxAttempts(),
-                quiz.getQuestions().stream()
-                        .map(item -> new StudentQuestionView(
-                                item.getId(),
-                                item.getText(),
-                                item.getType(),
-                                item.getPoints(),
-                                item.getOrderIndex(),
-                                item.getOptions().stream()
-                                        .map(option -> new StudentOptionView(option.getId(), option.getText()))
-                                        .toList()))
+                quiz.getQuestions().stream().map(this::studentQuestion).toList());
+    }
+
+    public StudentQuestionView studentQuestion(Question item) {
+        return new StudentQuestionView(
+                item.getId(),
+                item.getText(),
+                item.getType(),
+                item.getPoints(),
+                item.getOrderIndex(),
+                item.getOptions().stream()
+                        .map(option -> new StudentOptionView(option.getId(), option.getText()))
                         .toList());
     }
 

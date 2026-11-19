@@ -40,6 +40,10 @@ public class TagService {
                 .toList();
     }
 
+    public TagResponse get(long id) {
+        return mapper.toResponse(tags.findById(id).orElseThrow(() -> NotFoundException.of("Tag", id)));
+    }
+
     @Transactional
     public void delete(long id) {
         Tag tag = tags.findWithCoursesById(id).orElseThrow(() -> NotFoundException.of("Tag", id));

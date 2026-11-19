@@ -51,6 +51,14 @@ public class EnrollmentController {
         return service.students(id, pageable);
     }
 
+    @GetMapping("/courses/{id}/enrollments/{studentId}")
+    @Operation(summary = "Получить запись студента на курс")
+    public EnrollmentResponse get(
+            @PathVariable @Positive(message = "Значение должно быть положительным") long id,
+            @PathVariable @Positive(message = "Значение должно быть положительным") long studentId) {
+        return service.get(id, studentId);
+    }
+
     @DeleteMapping("/courses/{id}/enrollments/{studentId}")
     @Operation(summary = "Отписать студента")
     @ResponseStatus(HttpStatus.NO_CONTENT)

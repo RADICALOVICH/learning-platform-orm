@@ -186,6 +186,88 @@ class HappyPathE2EIT extends AbstractIntegrationTest {
                 .asLong();
     }
 
+    @Test
+    @DisplayName("По Location доступны тег, запись, отметка конкретного урока и отдельный вопрос")
+    void createdResourcesAreReadable() {
+        var tag = created("/tags", Map.of("name", "hibernate"), "/tags/");
+        assertThat(get("/tags/" + tag.get("id")).get("name").asText()).isEqualTo("hibernate");
+        long course = data.publishedCourseWithLessons(2).getId();
+        long student = user("learner", "STUDENT");
+        var module = get("/courses/" + course + "/structure").at("/modules/0");
+        String enrollmentPath = "/courses/" + course + "/enrollments";
+        var enrollment = postAtLocation(enrollmentPath, Map.of("studentId", student), enrollmentPath + "/" + student);
+        assertThat(enrollment.get("courseId").asLong()).isEqualTo(course);
+        assertThat(enrollment.get("studentId").asLong()).isEqualTo(student);
+        for (var lesson : module.get("lessons")) {
+            String marks = "/lessons/" + lesson.get("id") + "/completions";
+            String location = marks + "/" + student;
+            assertThat(exchange(HttpMethod.GET, location, null, 404, null)
+                            .get("code")
+                            .asText())
+                    .isEqualTo("LESSON_COMPLETION_NOT_FOUND");
+            var mark = postAtLocation(marks, Map.of("studentId", student), location);
+            assertThat(mark.get("lessonId")).isEqualTo(lesson.get("id"));
+            assertThat(mark.get("studentId").asLong()).isEqualTo(student);
+            assertThat(post(marks, Map.of("studentId", student), 200)).isEqualTo(mark);
+        }
+        var quiz = created(
+                "/modules/" + module.get("id") + "/quiz", Map.of("title", "ORM", "questions", List.of()), "/quizzes/");
+        var question = Map.of(
+                "text",
+                "Какой тип ключа?",
+                "type",
+                "SINGLE_CHOICE",
+                "options",
+                List.of(Map.of("text", "PK", "correct", true), Map.of("text", "FK", "correct", false)));
+        var added = http.post()
+                .uri("/quizzes/" + quiz.get("id") + "/questions")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(question)
+                .retrieve()
+                .toEntity(JsonNode.class);
+        assertThat(added.getStatusCode().value()).isEqualTo(201);
+        var questionId = added.getBody().at("/questions/0/id");
+        var location = added.getHeaders().getLocation();
+        assertThat(location.getPath()).isEqualTo("/api/questions/" + questionId);
+        var view = get("/questions/" + questionId);
+        assertThat(view.get("id")).isEqualTo(questionId);
+        assertThat(view.get("text").asText()).isEqualTo(question.get("text"));
+        assertThat(view.at("/options/0").has("correct")).isFalse();
+    }
+
+    @Test
+    @DisplayName("Отзыв принимает целые рейтинги 1–5, ошибки создания и обновления сохраняют данные")
+    void reviewRatingContract() {
+        long course = data.publishedCourseWithLessons(1).getId();
+        long student = user("reviewer", "STUDENT");
+        post("/courses/" + course + "/enrollments", Map.of("studentId", student), 201);
+        var reviews = "/courses/" + course + "/reviews";
+        for (Object invalid : List.of(5.9, 2.5, "4", 0, 6)) {
+            exchange(HttpMethod.POST, reviews, Map.of("studentId", student, "rating", invalid), 400, null);
+        }
+        assertThat(get(reviews).get("totalElements").asInt()).isZero();
+        var review = created(reviews, Map.of("studentId", student, "rating", 1), "/reviews/");
+        String path = "/reviews/" + review.get("id");
+        assertThat(get(path).get("rating").asInt()).isOne();
+        exchange(HttpMethod.PUT, path, Map.of("rating", 5), 200, null);
+        for (Object invalid : List.of(5.9, 2.5, "4", 0, 6)) {
+            exchange(HttpMethod.PUT, path, Map.of("rating", invalid), 400, null);
+            assertThat(get(path).get("rating").asInt()).isEqualTo(5);
+        }
+    }
+
+    private JsonNode postAtLocation(String path, Object body, String expectedPath) {
+        var response = http.post()
+                .uri(path)
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(body)
+                .retrieve()
+                .toEntity(JsonNode.class);
+        assertThat(response.getStatusCode().value()).isEqualTo(201);
+        assertThat(response.getHeaders().getLocation().getPath()).isEqualTo("/api" + expectedPath);
+        return get(expectedPath);
+    }
+
     private JsonNode get(String path) {
         return exchange(HttpMethod.GET, path, null, 200, null);
     }
@@ -201,13 +283,17 @@ class HappyPathE2EIT extends AbstractIntegrationTest {
     private JsonNode exchange(HttpMethod method, String path, Object body, int status, String location) {
         var request = http.method(method).uri(path);
         if (body != null) request.contentType(MediaType.APPLICATION_JSON).body(body);
-        var response = request.retrieve().toEntity(JsonNode.class);
+        var response = request.retrieve()
+                .onStatus(code -> code.isError(), (req, res) -> {})
+                .toEntity(JsonNode.class);
         assertThat(response.getStatusCode().value()).as("%s %s", method, path).isEqualTo(status);
         var json = response.getBody();
         assertThat(json).isNotNull();
-        if (location != null)
+        if (location != null) {
             assertThat(response.getHeaders().getLocation().getPath())
                     .isEqualTo("/api" + location + json.get("id").asLong());
+            assertThat(get(location + json.get("id")).get("id")).isEqualTo(json.get("id"));
+        }
         return json;
     }
 }

@@ -44,6 +44,11 @@ public class ProgressService {
                 new LessonProgressResponse(id, request.studentId(), course, entry.getCompletedAt()));
     }
 
+    public LessonProgressResponse getCompletion(long lessonId, long studentId) {
+        return progress.findCompletion(lessonId, studentId)
+                .orElseThrow(() -> NotFoundException.completion(lessonId, studentId));
+    }
+
     public CourseProgressResponse get(long id, long studentId) {
         return completion.snapshot(enrollments
                 .findByStudentIdAndCourseId(studentId, id)

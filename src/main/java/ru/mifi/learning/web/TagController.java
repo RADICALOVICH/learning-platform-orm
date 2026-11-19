@@ -47,6 +47,12 @@ public class TagController {
         return service.list();
     }
 
+    @GetMapping("/{id}")
+    @Operation(summary = "Получить тег")
+    public TagResponse get(@PathVariable @Positive(message = "Идентификатор должен быть положительным") long id) {
+        return service.get(id);
+    }
+
     @DeleteMapping("/{id}")
     @Operation(summary = "Удалить тег")
     @ResponseStatus(HttpStatus.NO_CONTENT)

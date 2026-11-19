@@ -71,6 +71,12 @@ public class EnrollmentService {
         enrollments.delete(enrollment);
     }
 
+    public EnrollmentResponse get(long courseId, long studentId) {
+        return mapper.enrollment(enrollments
+                .findByStudentIdAndCourseId(studentId, courseId)
+                .orElseThrow(() -> NotFoundException.enrollment(courseId, studentId)));
+    }
+
     public PageResponse<EnrolledStudentResponse> students(long id, Pageable pageable) {
         var page = enrollments.findWithStudentByCourseId(id, pageable);
         if (page.isEmpty() && !courses.existsById(id)) {

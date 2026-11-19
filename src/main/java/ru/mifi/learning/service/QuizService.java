@@ -11,6 +11,7 @@ import ru.mifi.learning.domain.enums.QuestionType;
 import ru.mifi.learning.dto.quiz.CreateQuizRequest;
 import ru.mifi.learning.dto.quiz.OptionRequest;
 import ru.mifi.learning.dto.quiz.QuestionRequest;
+import ru.mifi.learning.dto.quiz.StudentQuestionView;
 import ru.mifi.learning.dto.quiz.StudentQuizView;
 import ru.mifi.learning.dto.quiz.TeacherQuizView;
 import ru.mifi.learning.dto.quiz.UpdateQuizRequest;
@@ -112,6 +113,10 @@ public class QuizService {
     public void deleteQuestion(long id) {
         var quiz = parentForEdit(id);
         quiz.removeQuestion(questions.getReferenceById(id));
+    }
+
+    public StudentQuestionView question(long id) {
+        return mapper.studentQuestion(questions.findById(id).orElseThrow(() -> NotFoundException.of("Question", id)));
     }
 
     private Quiz parentForEdit(long id) {

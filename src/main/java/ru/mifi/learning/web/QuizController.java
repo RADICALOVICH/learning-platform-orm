@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 import ru.mifi.learning.dto.quiz.CreateQuizRequest;
 import ru.mifi.learning.dto.quiz.QuestionRequest;
+import ru.mifi.learning.dto.quiz.StudentQuestionView;
 import ru.mifi.learning.dto.quiz.StudentQuizView;
 import ru.mifi.learning.dto.quiz.TeacherQuizView;
 import ru.mifi.learning.dto.quiz.UpdateQuizRequest;
@@ -84,6 +85,13 @@ public class QuizController {
         return ResponseEntity.created(
                         URI.create("/api/questions/" + q.questions().getLast().id()))
                 .body(q);
+    }
+
+    @GetMapping("/questions/{id}")
+    @Operation(summary = "Получить вопрос с вариантами ответа")
+    public StudentQuestionView question(
+            @PathVariable @Positive(message = "Значение должно быть положительным") long id) {
+        return service.question(id);
     }
 
     @PutMapping("/questions/{id}")

@@ -51,6 +51,12 @@ public class ReviewController {
         return service.list(id, pageable);
     }
 
+    @GetMapping("/reviews/{id}")
+    @Operation(summary = "Получить отзыв")
+    public ReviewResponse get(@PathVariable @Positive(message = "Значение должно быть положительным") long id) {
+        return service.get(id);
+    }
+
     @PutMapping("/reviews/{id}")
     @Operation(summary = "Обновить отзыв")
     public ReviewResponse update(

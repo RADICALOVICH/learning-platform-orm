@@ -40,6 +40,10 @@ public class ReviewService {
         return mapper.response(reviews.save(review));
     }
 
+    public ReviewResponse get(long id) {
+        return mapper.response(require(id));
+    }
+
     public PageResponse<ReviewResponse> list(long id, Pageable pageable) {
         var rows = reviews.findWithStudentByCourseId(id, pageable);
         if (rows.isEmpty() && !courses.existsById(id)) {

@@ -36,10 +36,17 @@ public class ProgressController {
         var result = service.mark(id, request);
         var body = result.progress();
         return result.created()
-                ? ResponseEntity.created(
-                                URI.create("/api/courses/" + body.courseId() + "/progress/" + body.studentId()))
+                ? ResponseEntity.created(URI.create("/api/lessons/" + id + "/completions/" + body.studentId()))
                         .body(body)
                 : ResponseEntity.ok(body);
+    }
+
+    @GetMapping("/lessons/{id}/completions/{studentId}")
+    @Operation(summary = "Получить отметку студента о прохождении урока")
+    public LessonProgressResponse completion(
+            @PathVariable @Positive(message = "Значение должно быть положительным") long id,
+            @PathVariable @Positive(message = "Значение должно быть положительным") long studentId) {
+        return service.getCompletion(id, studentId);
     }
 
     @GetMapping("/courses/{id}/progress/{studentId}")

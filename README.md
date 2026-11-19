@@ -101,33 +101,35 @@ docker compose up -d --wait db
 
 ## REST API
 
-В API 79 операций. В таблице пути указаны относительно `/api/`. Схемы DTO, параметры фильтрации, сортировку и примеры запросов можно посмотреть и выполнить в [Swagger UI](http://localhost:8080/swagger-ui.html). Машиночитаемое описание доступно в [OpenAPI JSON](http://localhost:8080/v3/api-docs).
+В API 84 операции. В таблице пути указаны относительно `/api/`. Схемы DTO, параметры фильтрации, сортировку и примеры запросов можно посмотреть и выполнить в [Swagger UI](http://localhost:8080/swagger-ui.html). Машиночитаемое описание доступно в [OpenAPI JSON](http://localhost:8080/v3/api-docs).
 
 | Группа | Методы и пути |
 |---|---|
 | Пользователи | `GET/POST users`<br>`GET/PUT/DELETE users/{id}` |
 | Профили | `GET/PUT users/{id}/profile` |
 | Категории | `GET/POST categories`<br>`GET/PUT/DELETE categories/{id}` |
-| Теги | `GET/POST tags`<br>`DELETE tags/{id}` |
+| Теги | `GET/POST tags`<br>`GET/DELETE tags/{id}` |
 | Курсы | `GET/POST courses`<br>`GET/PUT/DELETE courses/{id}`<br>`PUT courses/{id}/tags`<br>`POST courses/{id}/archive`<br>`POST courses/{id}/publish`<br>`GET courses/{id}/structure` |
 | Модули | `GET/PUT/DELETE modules/{id}`<br>`GET/POST courses/{id}/modules` |
 | Уроки | `GET/PUT/DELETE lessons/{id}`<br>`GET/POST modules/{id}/lessons` |
-| Запись на курс | `GET/POST courses/{id}/enrollments`<br>`DELETE courses/{id}/enrollments/{studentId}` |
+| Запись на курс | `GET/POST courses/{id}/enrollments`<br>`GET/DELETE courses/{id}/enrollments/{studentId}` |
 | Курсы пользователя | `GET users/{id}/courses`<br>`GET users/{id}/courses-taught` |
-| Прогресс | `POST lessons/{id}/completions`<br>`GET courses/{id}/progress/{studentId}` |
-| Отзывы | `PUT/DELETE reviews/{id}`<br>`GET/POST courses/{id}/reviews` |
+| Прогресс | `POST lessons/{id}/completions`<br>`GET lessons/{id}/completions/{studentId}`<br>`GET courses/{id}/progress/{studentId}` |
+| Отзывы | `GET/PUT/DELETE reviews/{id}`<br>`GET/POST courses/{id}/reviews` |
 | Задания | `GET/PUT/DELETE assignments/{id}`<br>`GET/POST lessons/{id}/assignments` |
 | Задания студента | `GET users/{id}/assignments` |
 | Решения | `GET/DELETE submissions/{id}`<br>`PUT submissions/{id}/grade`<br>`GET users/{id}/submissions`<br>`GET/POST assignments/{id}/submissions` |
-| Учебные тесты | `GET/PUT/DELETE quizzes/{id}`<br>`PUT/DELETE questions/{id}`<br>`GET/POST modules/{id}/quiz`<br>`GET quizzes/{id}/full`<br>`POST quizzes/{id}/questions` |
+| Учебные тесты | `GET/PUT/DELETE quizzes/{id}`<br>`GET/PUT/DELETE questions/{id}`<br>`GET/POST modules/{id}/quiz`<br>`GET quizzes/{id}/full`<br>`POST quizzes/{id}/questions` |
 | Попытки тестирования | `GET/DELETE quiz-submissions/{id}`<br>`GET/POST quizzes/{id}/submissions` |
 | Результаты студента | `GET users/{id}/quiz-submissions` |
 | Уведомления | `PATCH notifications/{id}/read`<br>`GET users/{id}/notifications`<br>`POST users/{id}/notifications/read-all` |
 | Аналитика | `GET analytics/courses/{id}`<br>`GET analytics/quizzes/{id}`<br>`GET analytics/students/{id}`<br>`GET analytics/courses/top-rated`<br>`GET analytics/courses/{id}/leaderboard` |
 
-Создание ресурса возвращает `201` и заголовок `Location`. Первый `PUT users/{id}/profile` и первая отметка урока возвращают `201`, при повторном запросе — `200`. Удаление возвращает `204`. Для постраничных списков ответ содержит `content`, `page`, `size`, `totalElements` и `totalPages`. Нумерация страниц начинается с нуля.
+После создания ресурса сервер возвращает `201`. По адресу из заголовка `Location` можно получить ресурс методом `GET`. Для отметки урока этот адрес включает идентификаторы урока и студента. Первый `PUT users/{id}/profile` и первая отметка урока возвращают `201`, при повторном запросе — `200`. Удаление возвращает `204`. Для постраничных списков ответ содержит `content`, `page`, `size`, `totalElements` и `totalPages`. Нумерация страниц начинается с нуля.
 
 Для оценки используйте целое число в поле `score`. При максимуме 10 запрос с `{"score":10}` сохраняет оценку, `{"score":11}` возвращает `422 SCORE_OUT_OF_RANGE`, а `{"score":10.9}` — `400 MALFORMED_REQUEST`. В двух последних случаях решение сохраняет прежние оценку и статус.
+
+При создании и обновлении отзыва поле `rating` принимает целое JSON-число от 1 до 5 включительно. Дробное число или строка дают `400 MALFORMED_REQUEST`, целое число вне диапазона — `400 VALIDATION_FAILED`.
 
 Роль зачисленного студента можно изменить после отписки от всех курсов. При редактировании задания максимальный балл должен быть не ниже наибольшей выставленной оценки. В обоих случаях конфликт с сохранёнными данными возвращает `409`.
 
@@ -238,14 +240,14 @@ erDiagram
 | Модульные | Доменные правила, подсчёт баллов и сервис с Mockito | 17 |
 | Spring MVC | Bean Validation, JSON, коды ответа и обработку ошибок через MockMvc | 16 |
 | Интеграционные с PostgreSQL | Схему, CRUD, транзакции, события, аналитику и число SQL-запросов | 102 |
-| Сквозные HTTP с PostgreSQL | Прохождение курса на реальном порту, создание и обновление профиля, ошибки сортировки и отсутствующая запись | 4 |
-| **Всего** | **Успешно в чистой сборке** | **139** |
+| Сквозные HTTP с PostgreSQL | Прохождение курса, профиль, чтение по Location, валидацию рейтинга, ошибки сортировки и отсутствующую запись | 6 |
+| **Всего** | **Успешно в чистой сборке** | **141** |
 
-JaCoCo проверяет покрытие **строк** для проекта в целом. В проверяемый код вошли сервисы, модель, репозитории, мапперы, обработка ошибок и контроллеры. Из отчёта и порога исключены пакеты `config`, `dto` и точка входа `*Application`. Покрыто **1356 из 1513 строк (89,62%)** при минимуме **70%**. На снимке число пропущенных строк находится в паре столбцов `Missed / Lines`.
+JaCoCo проверяет покрытие **строк** для проекта в целом. В проверяемый код вошли сервисы, модель, репозитории, мапперы, обработка ошибок и контроллеры. Из отчёта и порога исключены пакеты `config`, `dto` и точка входа `*Application`. Покрыто **1395 из 1526 строк (91,42%)** при минимуме **70%**. На снимке число пропущенных строк находится в паре столбцов `Missed / Lines`.
 
 ![Сводный отчёт JaCoCo по пакетам учебной платформы](assets/jacoco.png)
 
-HTML-отчёт открывается локально из `target/site/jacoco/index.html`. Отчёты JUnit находятся в `target/surefire-reports/`. На фазе Maven `verify` также проверяется формат Java-кода. GitHub Actions выполняет эти проверки, сохраняет отчёты как артефакт `test-reports` и затем собирает образ. [Конфигурация CI](.github/workflows/ci.yml).
+HTML-отчёт открывается локально из `target/site/jacoco/index.html`. Отчёты JUnit находятся в `target/surefire-reports/`. На фазе Maven `verify` также проверяется формат Java-кода. GitLab CI запускает `clean verify` при push и для merge request, сохраняет отчёты Surefire и JaCoCo и после успешных проверок собирает Docker-образ. Для собственного GitLab Runner с Docker executor включите поддержку Docker-in-Docker с TLS и общим томом `/certs/client` для задания и сервиса. Для GitHub предусмотрена аналогичная сборка в Actions. [GitLab CI](.gitlab-ci.yml) · [Настройка runner](https://docs.gitlab.com/ci/docker/docker_in_docker/#docker-in-docker-with-tls-enabled-in-the-docker-executor) · [GitHub Actions](.github/workflows/ci.yml).
 
 ## Ограничения и план развития
 
@@ -279,4 +281,4 @@ HTML-отчёт открывается локально из `target/site/jacoco
 | 12. Тестирование | JUnit, Surefire и порог покрытия строк | [Сборка Maven](pom.xml) |
 | 13. Архитектура и качество | DTO, транзакции сервисов и проверяемые планы загрузки | [LazyLoadingLabIT](src/test/java/ru/mifi/learning/repository/LazyLoadingLabIT.java) |
 | 14. Документация | Быстрый старт, ER-диаграмма и исполняемые примеры HTTP | [Демонстрационный сценарий](http/demo.http) |
-| 15. DevOps | Compose, сборка и тесты Maven, сборка Docker-образа | [Workflow GitHub Actions](.github/workflows/ci.yml) |
+| 15. DevOps | Compose, сборка и тесты Maven, сборка Docker-образа | [GitLab CI](.gitlab-ci.yml) · [GitHub Actions](.github/workflows/ci.yml) |
