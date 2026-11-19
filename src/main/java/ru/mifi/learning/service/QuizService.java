@@ -19,6 +19,7 @@ import ru.mifi.learning.exception.ConflictException;
 import ru.mifi.learning.exception.NotFoundException;
 import ru.mifi.learning.mapper.QuizMapper;
 import ru.mifi.learning.repository.CourseModuleRepository;
+import ru.mifi.learning.repository.CourseRepository;
 import ru.mifi.learning.repository.QuestionRepository;
 import ru.mifi.learning.repository.QuizRepository;
 import ru.mifi.learning.repository.QuizSubmissionRepository;
@@ -29,6 +30,8 @@ import ru.mifi.learning.repository.QuizSubmissionRepository;
 public class QuizService {
     private final QuizRepository quizzes;
     private final CourseModuleRepository modules;
+    private final CourseRepository courses;
+    private final CourseCompletionService completion;
     private final QuestionRepository questions;
     private final QuizSubmissionRepository attempts;
     private final QuizMapper mapper;
@@ -79,8 +82,10 @@ public class QuizService {
 
     @Transactional
     public void delete(long id) {
+        var course = courses.lockByQuizId(id).orElseThrow(() -> NotFoundException.of("Quiz", id));
         var quiz = editable(id);
         quizzes.delete(quiz);
+        completion.afterContentRemoval(course);
     }
 
     @Transactional

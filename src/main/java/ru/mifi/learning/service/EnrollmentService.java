@@ -54,6 +54,9 @@ public class EnrollmentService {
         if (enrollments.existsByStudentIdAndCourseId(student.getId(), id)) {
             throw new ConflictException("ALREADY_ENROLLED", "Студент уже записан на курс");
         }
+        if (courses.countLessonsByCourseId(id) == 0) {
+            throw new BusinessRuleException("COURSE_EMPTY", "Для записи в курсе нужен хотя бы один урок");
+        }
         var enrollment = enrollments.save(new Enrollment(student, course, clock.instant()));
         log.info("Запись на курс courseId={}, enrollmentId={}", id, enrollment.getId());
         events.publishEvent(new StudentEnrolledEvent(student.getId(), id, enrollment.getId()));
@@ -64,7 +67,7 @@ public class EnrollmentService {
     public void unsubscribe(long id, long studentId) {
         var enrollment = enrollments
                 .lockByStudentAndCourse(studentId, id)
-                .orElseThrow(() -> NotFoundException.of("Enrollment", studentId));
+                .orElseThrow(() -> NotFoundException.enrollment(id, studentId));
         enrollments.delete(enrollment);
     }
 

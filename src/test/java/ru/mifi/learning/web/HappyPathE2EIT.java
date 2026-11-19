@@ -141,6 +141,26 @@ class HappyPathE2EIT extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("Отсутствующая запись в ответе 404 определяется по студенту и курсу")
+    void missingEnrollment() {
+        long course = data.publishedCourseWithLessons(1).getId();
+        long student = data.student().getId();
+        for (var method : List.of(HttpMethod.GET, HttpMethod.DELETE)) {
+            var path = "/courses/" + course + (method == HttpMethod.GET ? "/progress/" : "/enrollments/") + student;
+            var error = http.method(method)
+                    .uri(path)
+                    .retrieve()
+                    .onStatus(status -> status.isError(), (request, result) -> {})
+                    .toEntity(JsonNode.class);
+            assertThat(error.getStatusCode().value()).isEqualTo(404);
+            assertThat(error.getBody().path("code").asText()).isEqualTo("ENROLLMENT_NOT_FOUND");
+            assertThat(error.getBody().path("detail").asText())
+                    .isEqualTo(
+                            "Студент с идентификатором " + student + " не записан на курс с идентификатором " + course);
+        }
+    }
+
+    @Test
     @DisplayName("Неизвестное поле сортировки возвращает 400 для списков уведомлений, записей и отзывов")
     void invalidSort() {
         long id = user("reader", "STUDENT");

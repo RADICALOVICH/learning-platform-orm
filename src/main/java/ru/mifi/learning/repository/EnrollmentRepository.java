@@ -29,7 +29,23 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
     @Query("select e.student.id from Enrollment e where e.course.id = :courseId and e.status = :status")
     List<Long> findStudentIdsByCourseIdAndStatus(Long courseId, EnrollmentStatus status);
 
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select e from Enrollment e where e.course.id = :courseId and e.status = ACTIVE order by e.id")
+    List<Enrollment> lockActiveByCourseId(long courseId);
+
+    @Query("""
+            select e from Enrollment e
+            where e.course.id = :courseId and e.status = ACTIVE and e.id = coalesce(:enrollmentId, e.id)
+            and (select count(p) from LessonProgress p where p.enrollment = e) = :totalLessons
+            and not exists (select q.id from Quiz q where q.module.course = e.course
+                and not exists (select a.id from QuizSubmission a
+                    where a.quiz = q and a.student = e.student and a.passed = true))
+            """)
+    List<Enrollment> findReadyToComplete(long courseId, Long enrollmentId, long totalLessons);
+
     boolean existsByCourseId(Long courseId);
+
+    boolean existsByCourseIdAndStatus(long courseId, EnrollmentStatus status);
 
     boolean existsByStudentId(Long studentId);
 

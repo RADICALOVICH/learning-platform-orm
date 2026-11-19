@@ -47,4 +47,16 @@ public interface CourseRepository extends JpaRepository<Course, Long>, JpaSpecif
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select c from Course c where c.id=:id")
     Optional<Course> lockById(long id);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select c from Course c where c.id = (select item.module.course.id from Lesson item where item.id = :id)")
+    Optional<Course> lockByLessonId(long id);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select c from Course c where c.id = (select item.course.id from CourseModule item where item.id = :id)")
+    Optional<Course> lockByModuleId(long id);
+
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @Query("select c from Course c where c.id = (select item.module.course.id from Quiz item where item.id = :id)")
+    Optional<Course> lockByQuizId(long id);
 }

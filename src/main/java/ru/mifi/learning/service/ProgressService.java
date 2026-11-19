@@ -36,21 +36,17 @@ public class ProgressService {
                         new BusinessRuleException("LESSON_NOT_IN_COURSE", "Студент не записан на курс этого урока"));
         var key = new LessonProgressId(enrollment.getId(), id);
         var existing = progress.findById(key);
-        if (existing.isPresent()) {
-            return new MarkResult(
-                    false,
-                    new LessonProgressResponse(
-                            id, request.studentId(), course, existing.get().getCompletedAt()));
-        }
-        var saved = progress.save(new LessonProgress(enrollment, lessons.getReferenceById(id), clock.instant()));
+        var entry = existing.orElseGet(
+                () -> progress.save(new LessonProgress(enrollment, lessons.getReferenceById(id), clock.instant())));
         completion.tryComplete(enrollment);
         return new MarkResult(
-                true, new LessonProgressResponse(id, request.studentId(), course, saved.getCompletedAt()));
+                existing.isEmpty(),
+                new LessonProgressResponse(id, request.studentId(), course, entry.getCompletedAt()));
     }
 
     public CourseProgressResponse get(long id, long studentId) {
         return completion.snapshot(enrollments
                 .findByStudentIdAndCourseId(studentId, id)
-                .orElseThrow(() -> NotFoundException.of("Enrollment", studentId)));
+                .orElseThrow(() -> NotFoundException.enrollment(id, studentId)));
     }
 }

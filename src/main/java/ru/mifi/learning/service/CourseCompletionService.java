@@ -6,9 +6,12 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.mifi.learning.domain.entity.Course;
 import ru.mifi.learning.domain.entity.Enrollment;
+import ru.mifi.learning.domain.enums.CourseStatus;
 import ru.mifi.learning.domain.enums.EnrollmentStatus;
 import ru.mifi.learning.dto.enrollment.CourseProgressResponse;
+import ru.mifi.learning.exception.ConflictException;
 import ru.mifi.learning.repository.EnrollmentRepository;
 import ru.mifi.learning.repository.LessonProgressRepository;
 import ru.mifi.learning.repository.LessonRepository;
@@ -40,9 +43,34 @@ public class CourseCompletionService {
         if (enrollment.getStatus() == EnrollmentStatus.COMPLETED) {
             return;
         }
-        var snapshot = snapshot(enrollment);
-        if (snapshot.completedLessons() == snapshot.totalLessons()
-                && snapshot.passedQuizzes() == snapshot.totalQuizzes()) {
+        long courseId = enrollment.getCourse().getId();
+        completeReady(courseId, enrollment.getId(), lessons.countByModuleCourseId(courseId));
+    }
+
+    @Transactional
+    public void afterContentRemoval(Course course) {
+        // Удаление дочерних строк и каскады PostgreSQL должны быть видны запросам прогресса.
+        lessons.flush();
+        long courseId = course.getId();
+        long totalLessons = lessons.countByModuleCourseId(courseId);
+        if (totalLessons == 0) {
+            if (course.getStatus() == CourseStatus.PUBLISHED
+                    || enrollments.existsByCourseIdAndStatus(courseId, EnrollmentStatus.ACTIVE)) {
+                throw new ConflictException(
+                        "COURSE_REQUIRES_LESSON",
+                        "Для публикации и продолжения обучения в курсе должен остаться хотя бы один урок");
+            }
+            return;
+        }
+        // Дожидаемся параллельных отметок и сдач перед выборкой готовых к завершению записей.
+        if (!enrollments.lockActiveByCourseId(courseId).isEmpty()) {
+            completeReady(courseId, null, totalLessons);
+        }
+    }
+
+    private void completeReady(long courseId, Long enrollmentId, long totalLessons) {
+        if (totalLessons == 0) return;
+        for (var enrollment : enrollments.findReadyToComplete(courseId, enrollmentId, totalLessons)) {
             enrollment.complete(clock.instant());
             events.publishEvent(new CourseCompletedEvent(
                     enrollment.getStudent().getId(), enrollment.getCourse().getId(), enrollment.getId()));

@@ -45,6 +45,17 @@ class EnrollmentServiceIT extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("В старый опубликованный курс без уроков записаться нельзя")
+    void legacyEmptyCourse() {
+        var course = data.publishedCourseWithLessons(0);
+        var student = new StudentRequest(data.student().getId());
+        assertThatThrownBy(() -> service.enroll(course.getId(), student))
+                .extracting("code")
+                .isEqualTo("COURSE_EMPTY");
+        assertThat(service.studentCourses(student.studentId())).isEmpty();
+    }
+
+    @Test
     @DisplayName("Списки студентов и курсов соблюдают план загрузки")
     void list() {
         var c = data.publishedCourseWithLessons(1);

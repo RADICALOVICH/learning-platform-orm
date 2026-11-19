@@ -12,6 +12,7 @@ import ru.mifi.learning.exception.ConflictException;
 import ru.mifi.learning.exception.NotFoundException;
 import ru.mifi.learning.mapper.CourseMapper;
 import ru.mifi.learning.repository.CourseModuleRepository;
+import ru.mifi.learning.repository.CourseRepository;
 import ru.mifi.learning.repository.LessonRepository;
 import ru.mifi.learning.repository.SubmissionRepository;
 
@@ -21,6 +22,8 @@ import ru.mifi.learning.repository.SubmissionRepository;
 public class LessonService {
     private final LessonRepository lessons;
     private final CourseModuleRepository modules;
+    private final CourseRepository courses;
+    private final CourseCompletionService completion;
     private final SubmissionRepository submissions;
     private final CourseMapper mapper;
 
@@ -72,11 +75,13 @@ public class LessonService {
 
     @Transactional
     public void delete(long id) {
+        var course = courses.lockByLessonId(id).orElseThrow(() -> NotFoundException.of("Lesson", id));
         var lesson = require(id);
         if (submissions.existsByAssignmentLessonId(id)) {
             throw new ConflictException("LESSON_HAS_SUBMISSIONS", "У заданий урока есть решения");
         }
         lesson.getModule().removeLesson(lesson);
+        completion.afterContentRemoval(course);
     }
 
     private Lesson require(long id) {

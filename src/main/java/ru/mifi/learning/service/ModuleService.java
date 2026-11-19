@@ -21,6 +21,7 @@ import ru.mifi.learning.repository.SubmissionRepository;
 @Transactional(readOnly = true)
 public class ModuleService {
     private final CourseRepository courses;
+    private final CourseCompletionService completion;
     private final CourseModuleRepository modules;
     private final SubmissionRepository submissions;
     private final QuizSubmissionRepository attempts;
@@ -66,11 +67,13 @@ public class ModuleService {
 
     @Transactional
     public void delete(long id) {
+        var course = courses.lockByModuleId(id).orElseThrow(() -> NotFoundException.of("Module", id));
         var module = require(id);
         if (submissions.existsByAssignmentLessonModuleId(id) || attempts.existsByQuizModuleId(id)) {
             throw new ConflictException("MODULE_HAS_LEARNING_DATA", "Модуль содержит результаты студентов");
         }
-        module.getCourse().removeModule(module);
+        course.removeModule(module);
+        completion.afterContentRemoval(course);
     }
 
     private CourseModule require(long id) {

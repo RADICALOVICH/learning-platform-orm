@@ -96,6 +96,7 @@ class EnrollmentServiceTest {
     @DisplayName("После сохранения публикуется идентификатор записи")
     void success() {
         open();
+        when(courses.countLessonsByCourseId(3L)).thenReturn(1L);
         var saved = mock(Enrollment.class);
         when(saved.getId()).thenReturn(19L);
         when(enrollments.save(any())).thenReturn(saved);

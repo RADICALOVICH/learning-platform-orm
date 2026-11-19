@@ -53,6 +53,17 @@ class SubmissionControllerTest {
     }
 
     @Test
+    @DisplayName("Дробный балл отклоняется до изменения решения")
+    void fractionalGrade() throws Exception {
+        mvc.perform(put("/api/submissions/12/grade")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"score\":10.9}"))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value("MALFORMED_REQUEST"));
+        verifyNoInteractions(service);
+    }
+
+    @Test
     @DisplayName("Отказ в сдаче возвращает код бизнес-правила или конфликта")
     void errors() throws Exception {
         when(service.submit(eq(9L), any()))
