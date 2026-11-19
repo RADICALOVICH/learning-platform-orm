@@ -3,6 +3,7 @@ package ru.mifi.learning.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,12 +12,10 @@ import ru.mifi.learning.dto.assignment.SubmitRequest;
 import ru.mifi.learning.exception.ConflictException;
 import ru.mifi.learning.support.AbstractIntegrationTest;
 
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class AssignmentServiceIT extends AbstractIntegrationTest {
-    @Autowired
-    AssignmentService assignments;
-
-    @Autowired
-    SubmissionService solutions;
+    private final AssignmentService assignments;
+    private final SubmissionService solutions;
 
     @Test
     @DisplayName("Проекция читает задания студента одним запросом и показывает статус сдачи")

@@ -5,6 +5,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 import java.time.Instant;
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,9 +20,9 @@ import ru.mifi.learning.exception.ConflictException;
 import ru.mifi.learning.service.SubmissionService;
 
 @WebMvcTest(SubmissionController.class)
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class SubmissionControllerTest {
-    @Autowired
-    MockMvc mvc;
+    private final MockMvc mvc;
 
     @MockitoBean
     SubmissionService service;

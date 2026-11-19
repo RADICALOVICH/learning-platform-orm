@@ -3,6 +3,7 @@ package ru.mifi.learning.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,12 +13,10 @@ import ru.mifi.learning.exception.BusinessRuleException;
 import ru.mifi.learning.exception.ConflictException;
 import ru.mifi.learning.support.AbstractIntegrationTest;
 
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class ReviewServiceIT extends AbstractIntegrationTest {
-    @Autowired
-    ReviewService reviews;
-
-    @Autowired
-    CourseService courses;
+    private final ReviewService reviews;
+    private final CourseService courses;
 
     @Test
     @DisplayName("Только записанный студент оставляет один отзыв, средний рейтинг обновляется")

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -16,10 +17,8 @@ public interface EnrollmentRepository extends JpaRepository<Enrollment, Long> {
 
     Optional<Enrollment> findByStudentIdAndCourseId(Long studentId, Long courseId);
 
-    @Query(
-            value = "select e from Enrollment e join fetch e.student where e.course.id = :courseId",
-            countQuery = "select count(e) from Enrollment e where e.course.id = :courseId")
-    Page<Enrollment> findByCourseIdWithStudent(Long courseId, Pageable pageable);
+    @EntityGraph(attributePaths = "student")
+    Page<Enrollment> findWithStudentByCourseId(Long courseId, Pageable pageable);
 
     @Query("""
             select e from Enrollment e join fetch e.course c join fetch c.teacher join fetch c.category

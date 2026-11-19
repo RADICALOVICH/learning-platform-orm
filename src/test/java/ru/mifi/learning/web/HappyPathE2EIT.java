@@ -120,16 +120,21 @@ class HappyPathE2EIT extends AbstractIntegrationTest {
     }
 
     @Test
-    @DisplayName("Неизвестное поле сортировки уведомлений возвращает понятную ошибку")
-    void invalidNotificationSort() {
+    @DisplayName("Неизвестное поле сортировки возвращает 400 для списков уведомлений, записей и отзывов")
+    void invalidSort() {
         long id = user("reader", "STUDENT");
-        for (boolean unreadOnly : List.of(true, false)) {
+        long course = data.publishedCourseWithLessons(1).getId();
+        for (String path : List.of(
+                "/users/" + id + "/notifications?sort=unknown&unreadOnly=true",
+                "/users/" + id + "/notifications?sort=unknown&unreadOnly=false",
+                "/courses/" + course + "/enrollments?sort=unknown",
+                "/courses/" + course + "/reviews?sort=unknown")) {
             var response = http.get()
-                    .uri("/users/" + id + "/notifications?sort=unknown&unreadOnly=" + unreadOnly)
+                    .uri(path)
                     .retrieve()
                     .onStatus(status -> status.isError(), (request, result) -> {})
                     .toEntity(JsonNode.class);
-            assertThat(response.getStatusCode().value()).isEqualTo(400);
+            assertThat(response.getStatusCode().value()).as(path).isEqualTo(400);
             assertThat(response.getBody().get("code").asText()).isEqualTo("INVALID_SORT");
         }
     }

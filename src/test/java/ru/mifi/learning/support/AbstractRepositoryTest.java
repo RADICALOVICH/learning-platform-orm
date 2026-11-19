@@ -12,14 +12,18 @@ import org.springframework.test.context.ActiveProfiles;
 @ActiveProfiles("test")
 @Import({TestcontainersConfiguration.class, TestDataFactory.class, QueryCounter.class})
 public abstract class AbstractRepositoryTest {
-    @Autowired
     protected TestEntityManager em;
 
-    @Autowired
     protected TestDataFactory data;
 
-    @Autowired
     protected QueryCounter queries;
+
+    @Autowired
+    void setUpPersistence(TestEntityManager em, TestDataFactory data, QueryCounter queries) {
+        this.em = em;
+        this.data = data;
+        this.queries = queries;
+    }
 
     protected void flushAndClear() {
         em.flush();

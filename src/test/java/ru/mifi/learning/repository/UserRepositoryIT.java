@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.HashSet;
 import java.util.Set;
+import lombok.RequiredArgsConstructor;
 import org.hibernate.Hibernate;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,12 +18,10 @@ import ru.mifi.learning.domain.enums.NotificationType;
 import ru.mifi.learning.domain.enums.Role;
 import ru.mifi.learning.support.AbstractRepositoryTest;
 
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class UserRepositoryIT extends AbstractRepositoryTest {
-    @Autowired
-    UserRepository users;
-
-    @Autowired
-    ProfileRepository profiles;
+    private final UserRepository users;
+    private final ProfileRepository profiles;
 
     @Test
     @DisplayName("Поиск находит нормализованный email независимо от регистра")

@@ -1,5 +1,9 @@
 # Учебная платформа
 
+[![CI · Maven и Docker](https://img.shields.io/badge/CI-Maven%20%2B%20Docker-35658a)](.github/workflows/ci.yml)
+
+REST-приложение для обучения на курсах. Преподаватель публикует уроки, задания и тесты. Студент записывается на курс, сдаёт работы и видит свой прогресс. Стек — Java 21, Spring Boot 3.5.16, Spring Data JPA, Hibernate 6.6 и PostgreSQL 17.
+
 ## Запуск в Docker
 
 Из корня проекта выполните две команды. Потребуются Docker и Docker Compose.
@@ -17,6 +21,42 @@ Compose соберёт приложение на Java 21 и поднимет Pos
 
 Для остановки выполните `docker compose --profile tools down`. Данные PostgreSQL сохраняются в томе `pgdata`.
 
+### Запуск для разработки
+
+Для двух вариантов ниже нужны JDK 21 и работающий Docker. Обёртка `mvnw` скачает нужную версию Maven. Запускайте один вариант приложения за раз. По умолчанию каждый слушает порт 8080.
+
+**Приложение на хосте, PostgreSQL в Compose.** В корне проекта выполните команды. При переходе с полного стека сначала остановите его командой из предыдущего раздела.
+
+```sh
+cp -n .env.example .env
+docker compose up -d --wait db
+./mvnw spring-boot:run
+```
+
+**Приложение на хосте, временная PostgreSQL в Testcontainers.** Контейнер создаётся с отдельной базой и свободным портом. Остановка приложения через Ctrl+C завершает и этот контейнер.
+
+```sh
+./mvnw spring-boot:test-run
+```
+
+### Профили и настройки
+
+| Профиль Spring | Использование | Схема и данные |
+|---|---|---|
+| `dev` (по умолчанию) | Локальный запуск, в том числе `spring-boot:test-run` | Hibernate обновляет схему. Приложение создаёт демо-каталог при первом запуске на пустой базе. В журнале доступны SQL и параметры. |
+| `test` | Автоматические интеграционные тесты | Отдельный PostgreSQL, `create-drop`, статистика Hibernate. Демо-набор включают только тесты заполнения. |
+| `prod` | Контейнер приложения в Compose | Hibernate обновляет схему в томе PostgreSQL. Заполнением управляет `APP_SEED_ENABLED`. |
+
+| Переменная | Назначение |
+|---|---|
+| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | База и учётные данные для инициализации тома PostgreSQL. Compose передаёт соответствующие значения приложению. |
+| `DB_URL`, `DB_USERNAME`, `DB_PASSWORD` | JDBC-подключение с хоста. При изменении параметров PostgreSQL обновите эти значения в `.env`. В Compose JDBC-адрес указывает на сервис `db`. |
+| `SPRING_PROFILES_ACTIVE` | Выбор профиля. В Compose уже задан `prod`. |
+| `APP_SEED_ENABLED` | По умолчанию в Compose `true`. Значение `false` пропускает заполнение. |
+| `SERVER_PORT` | Порт локального Spring Boot приложения, по умолчанию 8080. |
+
+Шаблон конфигурации — [.env.example](.env.example). Для Testcontainers параметры соединения предоставляет `@ServiceConnection`.
+
 ## Учебный сценарий в Swagger UI
 
 1. Создайте категорию и двух пользователей с ролями `TEACHER` и `STUDENT`.
@@ -24,8 +64,6 @@ Compose соберёт приложение на Java 21 и поднимет Pos
 3. Добавьте задание к уроку и тест к модулю. Запишите студента на курс.
 4. Отправьте решение от имени студента и выставьте оценку. Для прохождения теста возьмите идентификаторы вопросов и вариантов из студенческого представления.
 5. Отметьте урок пройденным и сдайте тест. Статус записи и прогресс доступны в `GET /api/courses/{id}/progress/{studentId}`.
-
-В учебном API идентификаторы участников передаются в запросах. Проверка роли и записи на курс выполняется в сервисах. Аутентификация в эту версию проекта не входит.
 
 ## Демо-данные
 
@@ -63,6 +101,109 @@ Compose соберёт приложение на Java 21 и поднимет Pos
 | `PATCH /api/notifications/{id}/read` | Прочитанное уведомление |
 | `POST /api/users/{id}/notifications/read-all` | Число записей, отмеченных прочитанными |
 
+## REST API
+
+В API 79 операций. В таблице пути указаны относительно `/api/`. Схемы DTO, параметры фильтрации, сортировку и примеры запросов можно посмотреть и выполнить в [Swagger UI](http://localhost:8080/swagger-ui.html). Машиночитаемое описание доступно в [OpenAPI JSON](http://localhost:8080/v3/api-docs).
+
+| Группа | Методы и пути |
+|---|---|
+| Пользователи | `GET/POST users`<br>`GET/PUT/DELETE users/{id}` |
+| Профили | `GET/PUT users/{id}/profile` |
+| Категории | `GET/POST categories`<br>`GET/PUT/DELETE categories/{id}` |
+| Теги | `GET/POST tags`<br>`DELETE tags/{id}` |
+| Курсы | `GET/POST courses`<br>`GET/PUT/DELETE courses/{id}`<br>`PUT courses/{id}/tags`<br>`POST courses/{id}/archive`<br>`POST courses/{id}/publish`<br>`GET courses/{id}/structure` |
+| Модули | `GET/PUT/DELETE modules/{id}`<br>`GET/POST courses/{id}/modules` |
+| Уроки | `GET/PUT/DELETE lessons/{id}`<br>`GET/POST modules/{id}/lessons` |
+| Запись на курс | `GET/POST courses/{id}/enrollments`<br>`DELETE courses/{id}/enrollments/{studentId}` |
+| Курсы пользователя | `GET users/{id}/courses`<br>`GET users/{id}/courses-taught` |
+| Прогресс | `POST lessons/{id}/completions`<br>`GET courses/{id}/progress/{studentId}` |
+| Отзывы | `PUT/DELETE reviews/{id}`<br>`GET/POST courses/{id}/reviews` |
+| Задания | `GET/PUT/DELETE assignments/{id}`<br>`GET/POST lessons/{id}/assignments` |
+| Задания студента | `GET users/{id}/assignments` |
+| Решения | `GET/DELETE submissions/{id}`<br>`PUT submissions/{id}/grade`<br>`GET users/{id}/submissions`<br>`GET/POST assignments/{id}/submissions` |
+| Учебные тесты | `GET/PUT/DELETE quizzes/{id}`<br>`PUT/DELETE questions/{id}`<br>`GET/POST modules/{id}/quiz`<br>`GET quizzes/{id}/full`<br>`POST quizzes/{id}/questions` |
+| Попытки тестирования | `GET/DELETE quiz-submissions/{id}`<br>`GET/POST quizzes/{id}/submissions` |
+| Результаты студента | `GET users/{id}/quiz-submissions` |
+| Уведомления | `PATCH notifications/{id}/read`<br>`GET users/{id}/notifications`<br>`POST users/{id}/notifications/read-all` |
+| Аналитика | `GET analytics/courses/{id}`<br>`GET analytics/quizzes/{id}`<br>`GET analytics/students/{id}`<br>`GET analytics/courses/top-rated`<br>`GET analytics/courses/{id}/leaderboard` |
+
+Создание ресурса возвращает `201` и заголовок `Location`. Удаление возвращает `204`. Для постраничных списков ответ содержит `content`, `page`, `size`, `totalElements` и `totalPages`. Нумерация страниц начинается с нуля.
+
+| HTTP | Пример кода ошибки | Когда возникает |
+|---|---|---|
+| 400 | `VALIDATION_FAILED`, `MALFORMED_REQUEST`, `INVALID_SORT` | Поле не прошло проверку, JSON повреждён или поле сортировки неизвестно |
+| 404 | `USER_NOT_FOUND`, `COURSE_NOT_FOUND` | Ресурс с переданным ID отсутствует |
+| 409 | `ALREADY_ENROLLED`, `COURSE_HAS_LEARNING_DATA` | Повторная запись или попытка удалить курс с учебной историей |
+| 422 | `COURSE_NOT_OPEN`, `SCORE_OUT_OF_RANGE` | Запрос нарушает предметное правило |
+| 500 | `INTERNAL_ERROR` | Непредвиденная ошибка. Подробности сохраняются в журнале приложения |
+
+Пример `application/problem+json` при запросе отсутствующего пользователя.
+
+```json
+{
+  "type": "about:blank",
+  "title": "Not Found",
+  "status": 404,
+  "detail": "Объект User с идентификатором 999999999 не найден",
+  "instance": "/api/users/999999999",
+  "code": "USER_NOT_FOUND"
+}
+```
+
+### Как читать аналитику
+
+В отчёте студента лучший процент за тест берётся по всем попыткам курса. В лидерборде к баллам за проверенные задания прибавляются лучшие баллы за каждый отдельный тест. Равные суммы дают одинаковое место. Доля успешных попыток считается по всем попыткам, включая повторные. Пока оценок или попыток нет, соответствующее среднее равно `null`.
+
+## Архитектура
+
+```text
+HTTP → web → service → repository → PostgreSQL
+        DTO     │          ↑
+                ├── domain/entity
+                ├── mapper → DTO ответа
+                └── service/event → уведомление
+```
+
+Контроллеры принимают DTO, выполняют Bean Validation и формируют HTTP-ответ. Сервис открывает транзакцию, проверяет бизнес-правила и собирает DTO через маппер. Сущности остаются внутри транзакции, Open Session in View отключён. Для чтения сервисы используют транзакции `readOnly`, для изменения — обычные. Поля версии защищают от потери изменений при параллельной записи.
+
+В `repository` сосредоточены JPQL-запросы, графы сущностей, проекции и спецификации поиска. Для рейтинга студентов PostgreSQL присваивает места оконной функцией `rank()`. Доменное событие сохраняет уведомление в транзакции исходного действия, а обработчик после коммита пишет сообщение о демо-email в журнал. Начальные данные создаёт пакет `seed`. [Исходный код приложения](src/main/java/ru/mifi/learning).
+
+## Модель данных
+
+18 JPA-сущностей хранятся в 20 таблицах. На диаграмме показаны таблицы сущностей. Две связи многие-ко-многим используют промежуточные таблицы `course_tags` и `quiz_answer_options`.
+
+```mermaid
+erDiagram
+    USERS ||--o| PROFILES : "1-1 MapsId"
+    USERS ||--o{ COURSES : teaches
+    CATEGORIES ||--o{ COURSES : groups
+    COURSES }o--o{ TAGS : "M-M course_tags"
+    COURSES ||--o{ COURSE_MODULES : contains
+    COURSE_MODULES ||--o{ LESSONS : contains
+    COURSE_MODULES ||--o| QUIZZES : "1-1"
+    LESSONS ||--o{ ASSIGNMENTS : has
+    USERS ||--o{ ENROLLMENTS : student
+    COURSES ||--o{ ENROLLMENTS : has
+    ENROLLMENTS ||--o{ LESSON_PROGRESS : tracks
+    LESSONS ||--o{ LESSON_PROGRESS : completed
+    ASSIGNMENTS ||--o{ SUBMISSIONS : receives
+    USERS ||--o{ SUBMISSIONS : author
+    QUIZZES ||--o{ QUESTIONS : has
+    QUESTIONS ||--o{ ANSWER_OPTIONS : has
+    QUIZZES ||--o{ QUIZ_SUBMISSIONS : attempts
+    USERS ||--o{ QUIZ_SUBMISSIONS : student
+    QUIZ_SUBMISSIONS ||--o{ QUIZ_ANSWERS : contains
+    QUESTIONS ||--o{ QUIZ_ANSWERS : answered
+    QUIZ_ANSWERS }o--o{ ANSWER_OPTIONS : "M-M quiz_answer_options"
+    COURSES ||--o{ COURSE_REVIEWS : has
+    USERS ||--o{ COURSE_REVIEWS : author
+    USERS ||--o{ NOTIFICATIONS : recipient
+```
+
+Профиль использует ключ пользователя (`@MapsId`). У модуля может быть один тест. Запись на курс связывает студента с курсом и хранит статус. Составной ключ прогресса `(enrollment_id, lesson_id)` гарантирует одну отметку на урок в пределах записи.
+
+Каскады удаляют дочерний контент вместе с родителем. Попытки защищают структуру теста от изменений, а курс с учебной историей можно архивировать. При отписке удаляются запись и отметки уроков, решения, отзывы и попытки остаются. Удаление тега снимает связи с курсами. Подробности видны в [модели](src/main/java/ru/mifi/learning/domain/entity) и [тестах схемы PostgreSQL](src/test/java/ru/mifi/learning/repository/SchemaIT.java).
+
 ## Ленивая загрузка в Hibernate
 
 В `LazyLoadingLabIT` девять экспериментов с отдельными транзакциями. Запуск с доступным Docker — `./mvnw -Dtest=LazyLoadingLabIT test`.
@@ -74,3 +215,59 @@ Compose соберёт приложение на Java 21 и поднимет Pos
 | L5 | Одновременный fetch join модулей и уроков вызывает `MultipleBagFetchException`. Два запроса собирают дерево в одном контексте. |
 | L6–L7 | Пагинация с fetch join коллекции запрещена настройкой Hibernate. Страница загружает связи to-one графом, а теги читаются пакетами. Для 25 коллекций нужны два дополнительных запроса. |
 | L8–L9 | В транзакции чтения изменение названия курса не записывается. Получение ссылки по ID через `getReferenceById` обходится без SELECT. |
+
+## Тестирование и покрытие
+
+Для запуска проверок нужны JDK 21 и Docker. Testcontainers поднимет PostgreSQL для тестов. Из корня проекта выполните команду.
+
+```sh
+./mvnw -B clean verify
+```
+
+| Уровень | Что проверяет | Тестов |
+|---|---|---:|
+| Модульные | Доменные правила, подсчёт баллов и сервис с Mockito | 17 |
+| Spring MVC | Bean Validation, JSON, коды ответа и обработку ошибок через MockMvc | 15 |
+| Интеграционные с PostgreSQL | Схему, CRUD, транзакции, события, аналитику и число SQL-запросов | 90 |
+| Сквозные HTTP с PostgreSQL | Прохождение курса на реальном порту и ответы API при неверной сортировке | 2 |
+| **Всего** | **Успешно в чистой сборке** | **124** |
+
+JaCoCo проверяет покрытие **строк** для проекта в целом. В проверяемый код вошли сервисы, модель, репозитории, мапперы, обработка ошибок и контроллеры. Из отчёта и порога исключены пакеты `config`, `dto` и точка входа `*Application`. Покрыто **1277 из 1466 строк (87,11%)** при минимуме **70%**. На снимке число пропущенных строк находится в паре столбцов `Missed / Lines`.
+
+![Сводный отчёт JaCoCo по пакетам учебной платформы](assets/jacoco.png)
+
+HTML-отчёт открывается локально из `target/site/jacoco/index.html`. Отчёты JUnit находятся в `target/surefire-reports/`. На фазе Maven `verify` также проверяется формат Java-кода. GitHub Actions выполняет эти проверки, сохраняет отчёты как артефакт `test-reports` и затем собирает образ. [Конфигурация CI](.github/workflows/ci.yml).
+
+## Ограничения и план развития
+
+Клиент передаёт идентификаторы участников (`studentId`, `teacherId`). Сервис проверяет роль и факт записи там, где этого требует действие. Личность отправителя HTTP-запроса приложение не удостоверяет, поэтому учебный API предназначен для локальной работы.
+
+| Шаг | Что добавить | Почему выделено в отдельный этап |
+|---|---|---|
+| 1 | Явный контекст действующего пользователя и проверки владельца курса, задания или решения | Сейчас сценарии показывают предметные правила. Учебный заголовок `X-User-Id` позволил бы отдельно проверить правила владения. |
+| 2 | Spring Security и JWT | Подтверждение личности и выдача токенов требуют отдельной модели доступа. |
+| 3 | Миграции Flyway и `ddl-auto=validate` | Для демонстрации ORM схема создаётся непосредственно из JPA-аннотаций. |
+| 4 | Реальная почта и outbox для доставки с повторами | Сейчас отправку после коммита можно наблюдать в журнале, для доставки нужен почтовый сервер. |
+| 5 | Файлы решений в S3 или MinIO | В текущей модели студент отправляет текст или ссылку. |
+| 6 | Кэш справочников и полнотекстовый поиск курсов | Выбор индексов и кэша требует измерений на характерной нагрузке. |
+| 7 | Редактирование решения до проверки и история версий | Текущий сценарий хранит одну сдачу студента на задание. |
+
+## Соответствие критериям
+
+| Критерий | Что проверить | Где смотреть |
+|---|---|---|
+| 1. Модель данных | 18 сущностей, все три типа связей, составной ключ | [Сущности](src/main/java/ru/mifi/learning/domain/entity) |
+| 2. Репозитории и CRUD | Spring Data, уникальные ключи и ограничения | [Репозитории](src/main/java/ru/mifi/learning/repository) |
+| 3. Управление контентом | Публикация, карточка и структура курса | [CourseServiceIT](src/test/java/ru/mifi/learning/service/CourseServiceIT.java) |
+| 4. Запись на курс | Повторная запись, отписка, списки участников | [EnrollmentServiceIT](src/test/java/ru/mifi/learning/service/EnrollmentServiceIT.java) |
+| 5. Задания и решения | Срок сдачи, оценка, диапазон баллов | [SubmissionServiceIT](src/test/java/ru/mifi/learning/service/SubmissionServiceIT.java) |
+| 6. Тесты и викторины | Выбор ответов, веса, порог прохождения | [QuizScorerTest](src/test/java/ru/mifi/learning/service/quiz/QuizScorerTest.java) |
+| 7. Конфигурация PostgreSQL | Параметры подключения и профили | [Конфигурация Spring](src/main/resources) |
+| 8. Интеграционные проверки CRUD | Реальная PostgreSQL, каскады и ограничения | [Тесты репозиториев](src/test/java/ru/mifi/learning/repository) |
+| 9. REST API | Полный учебный сценарий, коды HTTP и Location | [HappyPathE2EIT](src/test/java/ru/mifi/learning/web/HappyPathE2EIT.java) |
+| 10. Валидация и ошибки | Ошибки запроса и предметные конфликты в ProblemDetail | [GlobalExceptionHandler](src/main/java/ru/mifi/learning/web/GlobalExceptionHandler.java) |
+| 11. Демо-данные | Начальное заполнение и повторный запуск | [DemoDataSeederIT](src/test/java/ru/mifi/learning/seed/DemoDataSeederIT.java) |
+| 12. Тестирование | JUnit, Surefire и порог покрытия строк | [Сборка Maven](pom.xml) |
+| 13. Архитектура и качество | DTO, транзакции сервисов и проверяемые планы загрузки | [LazyLoadingLabIT](src/test/java/ru/mifi/learning/repository/LazyLoadingLabIT.java) |
+| 14. Документация | Быстрый старт, ER-диаграмма и исполняемые примеры HTTP | [Демонстрационный сценарий](http/demo.http) |
+| 15. DevOps | Compose, сборка и тесты Maven, сборка Docker-образа | [Workflow GitHub Actions](.github/workflows/ci.yml) |

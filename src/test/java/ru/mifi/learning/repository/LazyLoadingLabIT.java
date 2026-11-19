@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import jakarta.persistence.EntityManager;
+import lombok.RequiredArgsConstructor;
 import org.hibernate.Hibernate;
 import org.hibernate.HibernateException;
 import org.hibernate.LazyInitializationException;
@@ -20,24 +21,14 @@ import ru.mifi.learning.domain.entity.Tag;
 import ru.mifi.learning.service.CourseService;
 import ru.mifi.learning.support.AbstractIntegrationTest;
 
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class LazyLoadingLabIT extends AbstractIntegrationTest {
-    @Autowired
-    CourseRepository courses;
-
-    @Autowired
-    CourseModuleRepository modules;
-
-    @Autowired
-    TagRepository tags;
-
-    @Autowired
-    CourseService service;
-
-    @Autowired
-    TransactionTemplate tx;
-
-    @Autowired
-    EntityManager em;
+    private final CourseRepository courses;
+    private final CourseModuleRepository modules;
+    private final TagRepository tags;
+    private final CourseService service;
+    private final TransactionTemplate tx;
+    private final EntityManager em;
 
     @Test
     @DisplayName("L1. Отсоединённый курс требует fetch join для чтения модулей")

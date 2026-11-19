@@ -10,14 +10,14 @@ import org.springframework.test.context.ActiveProfiles;
 @ActiveProfiles("test")
 @Import({TestcontainersConfiguration.class, TestDataFactory.class, DatabaseCleaner.class, QueryCounter.class})
 public abstract class AbstractIntegrationTest {
-    @Autowired
     protected TestDataFactory data;
 
-    @Autowired
     protected QueryCounter queries;
 
     @BeforeEach
-    void clearDatabase(@Autowired DatabaseCleaner cleaner) {
+    void setUp(@Autowired DatabaseCleaner cleaner, @Autowired TestDataFactory data, @Autowired QueryCounter queries) {
+        this.data = data;
+        this.queries = queries;
         cleaner.clean();
     }
 }

@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,22 +20,16 @@ import ru.mifi.learning.service.event.QuizPassedEvent;
 import ru.mifi.learning.support.AbstractIntegrationTest;
 
 @RecordApplicationEvents
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class QuizSubmissionServiceIT extends AbstractIntegrationTest {
-    @Autowired
-    QuizService quizzes;
-
-    @Autowired
-    QuizSubmissionService attempts;
-
-    @Autowired
-    ApplicationEvents events;
+    private final QuizService quizzes;
+    private final QuizSubmissionService attempts;
 
     @Test
     @DisplayName("Попытка хранит выбранные варианты и публикует событие только при успехе")
-    void result() {
+    void result(@Autowired ApplicationEvents events) {
         var c = data.publishedCourseWithLessons(1);
         var module = c.getModules().getFirst();
-        var lesson = module.getLessons().getFirst();
         var e = data.enrollment(c);
         long student = e.getStudent().getId();
         var quiz = data.quizWithQuestions(module, 1);
@@ -62,7 +57,6 @@ class QuizSubmissionServiceIT extends AbstractIntegrationTest {
     void invalid() {
         var c = data.publishedCourseWithLessons(1);
         var module = c.getModules().getFirst();
-        var lesson = module.getLessons().getFirst();
         var e = data.enrollment(c);
         long student = e.getStudent().getId();
         var quiz = data.quizWithQuestions(module, 2);

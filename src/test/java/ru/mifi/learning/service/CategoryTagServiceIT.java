@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,21 +18,13 @@ import ru.mifi.learning.repository.CourseRepository;
 import ru.mifi.learning.repository.TagRepository;
 import ru.mifi.learning.support.AbstractIntegrationTest;
 
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class CategoryTagServiceIT extends AbstractIntegrationTest {
-    @Autowired
-    CategoryService categories;
-
-    @Autowired
-    TagService tags;
-
-    @Autowired
-    CourseRepository courses;
-
-    @Autowired
-    TagRepository tagRepository;
-
-    @Autowired
-    TransactionTemplate transactions;
+    private final CategoryService categories;
+    private final TagService tags;
+    private final CourseRepository courses;
+    private final TagRepository tagRepository;
+    private final TransactionTemplate transactions;
 
     @Test
     @DisplayName("Категория читается, обновляется и удаляется, повтор имени блокируется")

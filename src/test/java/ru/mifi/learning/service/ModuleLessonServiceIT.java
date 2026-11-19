@@ -3,6 +3,7 @@ package ru.mifi.learning.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,30 +18,16 @@ import ru.mifi.learning.repository.QuizRepository;
 import ru.mifi.learning.repository.SubmissionRepository;
 import ru.mifi.learning.support.AbstractIntegrationTest;
 
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class ModuleLessonServiceIT extends AbstractIntegrationTest {
-    @Autowired
-    ModuleService modules;
-
-    @Autowired
-    LessonService lessons;
-
-    @Autowired
-    ProgressService progress;
-
-    @Autowired
-    QuizRepository quizzes;
-
-    @Autowired
-    LessonProgressRepository marks;
-
-    @Autowired
-    SubmissionRepository submissions;
-
-    @Autowired
-    AssignmentService assignments;
-
-    @Autowired
-    SubmissionService solutions;
+    private final ModuleService modules;
+    private final LessonService lessons;
+    private final ProgressService progress;
+    private final QuizRepository quizzes;
+    private final LessonProgressRepository marks;
+    private final SubmissionRepository submissions;
+    private final AssignmentService assignments;
+    private final SubmissionService solutions;
 
     @Test
     @DisplayName("Порядок новых модулей и уроков следует за максимальным индексом")

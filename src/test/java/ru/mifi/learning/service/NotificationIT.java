@@ -7,6 +7,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import jakarta.persistence.EntityManager;
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,27 +23,15 @@ import ru.mifi.learning.repository.NotificationRepository;
 import ru.mifi.learning.service.event.EmailStubListener;
 import ru.mifi.learning.support.AbstractIntegrationTest;
 
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class NotificationIT extends AbstractIntegrationTest {
-    @Autowired
-    EnrollmentService enrollments;
-
-    @Autowired
-    AssignmentService assignments;
-
-    @Autowired
-    ProgressService progress;
-
-    @Autowired
-    NotificationService service;
-
-    @Autowired
-    NotificationRepository notifications;
-
-    @Autowired
-    EntityManager em;
-
-    @Autowired
-    TransactionTemplate tx;
+    private final EnrollmentService enrollments;
+    private final AssignmentService assignments;
+    private final ProgressService progress;
+    private final NotificationService service;
+    private final NotificationRepository notifications;
+    private final EntityManager em;
+    private final TransactionTemplate tx;
 
     @MockitoSpyBean
     EmailStubListener email;

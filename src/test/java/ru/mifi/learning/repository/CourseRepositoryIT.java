@@ -3,6 +3,7 @@ package ru.mifi.learning.repository;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import lombok.RequiredArgsConstructor;
 import org.hibernate.Hibernate;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -21,15 +22,11 @@ import ru.mifi.learning.domain.enums.CourseStatus;
 import ru.mifi.learning.repository.spec.CourseSpecifications;
 import ru.mifi.learning.support.AbstractRepositoryTest;
 
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class CourseRepositoryIT extends AbstractRepositoryTest {
-    @Autowired
-    CourseRepository courses;
-
-    @Autowired
-    CourseModuleRepository modules;
-
-    @Autowired
-    QuizRepository quizzes;
+    private final CourseRepository courses;
+    private final CourseModuleRepository modules;
+    private final QuizRepository quizzes;
 
     @Test
     @DisplayName("Дерево от курса до задания сохраняется одним save")

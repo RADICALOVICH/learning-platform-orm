@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,12 +18,10 @@ import ru.mifi.learning.exception.BusinessRuleException;
 import ru.mifi.learning.exception.ConflictException;
 import ru.mifi.learning.support.AbstractIntegrationTest;
 
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class QuizServiceIT extends AbstractIntegrationTest {
-    @Autowired
-    QuizService quizzes;
-
-    @Autowired
-    QuizSubmissionService attempts;
+    private final QuizService quizzes;
+    private final QuizSubmissionService attempts;
 
     private QuestionRequest question() {
         return new QuestionRequest(

@@ -4,6 +4,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,9 +21,9 @@ import ru.mifi.learning.exception.BusinessRuleException;
 
 @WebMvcTest(GlobalExceptionHandlerTest.Probe.class)
 @Import(GlobalExceptionHandlerTest.Probe.class)
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class GlobalExceptionHandlerTest {
-    @Autowired
-    MockMvc mvc;
+    private final MockMvc mvc;
 
     @TestComponent
     @RestController

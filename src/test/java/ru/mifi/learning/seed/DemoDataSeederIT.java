@@ -3,6 +3,7 @@ package ru.mifi.learning.seed;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,15 +14,11 @@ import ru.mifi.learning.service.CategoryService;
 import ru.mifi.learning.support.AbstractIntegrationTest;
 
 @TestPropertySource(properties = "app.seed.enabled=true")
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class DemoDataSeederIT extends AbstractIntegrationTest {
-    @Autowired
-    DemoDataSeeder seeder;
-
-    @Autowired
-    JdbcTemplate jdbc;
-
-    @Autowired
-    CategoryService categories;
+    private final DemoDataSeeder seeder;
+    private final JdbcTemplate jdbc;
+    private final CategoryService categories;
 
     @Test
     @DisplayName("Демо-набор создаёт курсы и учебную историю только при первом запуске")

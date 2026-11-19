@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import java.time.LocalDate;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,18 +22,12 @@ import ru.mifi.learning.repository.ProfileRepository;
 import ru.mifi.learning.repository.UserRepository;
 import ru.mifi.learning.support.AbstractIntegrationTest;
 
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class UserServiceIT extends AbstractIntegrationTest {
-    @Autowired
-    UserService users;
-
-    @Autowired
-    ProfileService profiles;
-
-    @Autowired
-    UserRepository userRepository;
-
-    @Autowired
-    ProfileRepository profileRepository;
+    private final UserService users;
+    private final ProfileService profiles;
+    private final UserRepository userRepository;
+    private final ProfileRepository profileRepository;
 
     @Test
     @DisplayName("Создание, фильтр по роли и обновление выполняются в отдельных транзакциях")

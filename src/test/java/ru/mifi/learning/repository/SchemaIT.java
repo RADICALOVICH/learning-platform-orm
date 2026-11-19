@@ -2,15 +2,16 @@ package ru.mifi.learning.repository;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import ru.mifi.learning.support.AbstractRepositoryTest;
 
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class SchemaIT extends AbstractRepositoryTest {
-    @Autowired
-    JdbcTemplate jdbc;
+    private final JdbcTemplate jdbc;
 
     @Test
     @DisplayName("Созданы все 18 таблиц сущностей и две таблицы связей")

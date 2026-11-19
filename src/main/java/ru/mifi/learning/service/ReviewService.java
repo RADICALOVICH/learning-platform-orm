@@ -41,7 +41,7 @@ public class ReviewService {
     }
 
     public PageResponse<ReviewResponse> list(long id, Pageable pageable) {
-        var rows = reviews.findByCourseIdWithStudent(id, pageable);
+        var rows = reviews.findWithStudentByCourseId(id, pageable);
         if (rows.isEmpty() && !courses.existsById(id)) {
             throw NotFoundException.of("Course", id);
         }

@@ -109,6 +109,13 @@ public class DemoDataSeeder implements ApplicationRunner {
         enrollments.enroll(spring, new StudentRequest(oleg));
         enrollments.enroll(postgres, new StudentRequest(sofia));
 
+        seedHibernateActivity(orm, irina, maxim, vera);
+        reviews.create(orm, new CreateReviewRequest(irina, 5, "Разобралась с планами загрузки"));
+        reviews.create(orm, new CreateReviewRequest(maxim, 4, "Хочется больше задач по JPQL"));
+        reviews.create(spring, new CreateReviewRequest(oleg, 5, "Понятный пример контроллера"));
+    }
+
+    private void seedHibernateActivity(long orm, long irina, long maxim, long vera) {
         var modules = courses.structure(orm).modules();
         var first = modules.getFirst();
         var second = modules.getLast();
@@ -147,9 +154,6 @@ public class DemoDataSeeder implements ApplicationRunner {
         pass(modeling, irina);
         pass(fetching, irina);
         attempts.submit(modeling.id(), new TakeQuizRequest(maxim, List.of()));
-        reviews.create(orm, new CreateReviewRequest(irina, 5, "Разобралась с планами загрузки"));
-        reviews.create(orm, new CreateReviewRequest(maxim, 4, "Хочется больше задач по JPQL"));
-        reviews.create(spring, new CreateReviewRequest(oleg, 5, "Понятный пример контроллера"));
     }
 
     private long user(String login, String name, Role role) {

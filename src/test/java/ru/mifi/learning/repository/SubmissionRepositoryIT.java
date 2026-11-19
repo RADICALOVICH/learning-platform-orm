@@ -3,6 +3,7 @@ package ru.mifi.learning.repository;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,12 +18,10 @@ import ru.mifi.learning.repository.projection.StudentAssignment;
 import ru.mifi.learning.support.AbstractRepositoryTest;
 import ru.mifi.learning.support.TestDataFactory;
 
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class SubmissionRepositoryIT extends AbstractRepositoryTest {
-    @Autowired
-    SubmissionRepository submissions;
-
-    @Autowired
-    AssignmentRepository assignments;
+    private final SubmissionRepository submissions;
+    private final AssignmentRepository assignments;
 
     @Test
     @DisplayName("Одно задание допускает одну сдачу от студента")

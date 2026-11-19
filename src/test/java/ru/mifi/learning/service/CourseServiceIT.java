@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,9 +22,9 @@ import ru.mifi.learning.exception.ConflictException;
 import ru.mifi.learning.exception.NotFoundException;
 import ru.mifi.learning.support.AbstractIntegrationTest;
 
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class CourseServiceIT extends AbstractIntegrationTest {
-    @Autowired
-    CourseService courses;
+    private final CourseService courses;
 
     private CreateCourseRequest request(Course template, long teacher) {
         return new CreateCourseRequest(

@@ -3,6 +3,7 @@ package ru.mifi.learning.repository;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,12 +12,10 @@ import ru.mifi.learning.domain.entity.Course;
 import ru.mifi.learning.domain.entity.Tag;
 import ru.mifi.learning.support.AbstractRepositoryTest;
 
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class TagRepositoryIT extends AbstractRepositoryTest {
-    @Autowired
-    TagRepository tags;
-
-    @Autowired
-    CourseRepository courses;
+    private final TagRepository tags;
+    private final CourseRepository courses;
 
     @Test
     @DisplayName("Связанный тег защищён внешним ключом")

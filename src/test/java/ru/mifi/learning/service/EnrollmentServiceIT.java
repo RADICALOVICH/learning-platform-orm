@@ -3,6 +3,7 @@ package ru.mifi.learning.service;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,24 +19,14 @@ import ru.mifi.learning.exception.NotFoundException;
 import ru.mifi.learning.repository.LessonProgressRepository;
 import ru.mifi.learning.support.AbstractIntegrationTest;
 
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class EnrollmentServiceIT extends AbstractIntegrationTest {
-    @Autowired
-    EnrollmentService service;
-
-    @Autowired
-    CourseService courses;
-
-    @Autowired
-    ProgressService progress;
-
-    @Autowired
-    SubmissionService solutions;
-
-    @Autowired
-    AssignmentService assignments;
-
-    @Autowired
-    LessonProgressRepository marks;
+    private final EnrollmentService service;
+    private final CourseService courses;
+    private final ProgressService progress;
+    private final SubmissionService solutions;
+    private final AssignmentService assignments;
+    private final LessonProgressRepository marks;
 
     @Test
     @DisplayName("Запись на опубликованный курс уникальна; архив закрывает новую запись")

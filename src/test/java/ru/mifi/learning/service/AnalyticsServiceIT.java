@@ -7,6 +7,7 @@ import static org.assertj.core.api.Assertions.within;
 import jakarta.persistence.EntityManagerFactory;
 import java.util.Arrays;
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.hibernate.SessionFactory;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -28,39 +29,19 @@ import ru.mifi.learning.repository.CourseModuleRepository;
 import ru.mifi.learning.repository.CourseRepository;
 import ru.mifi.learning.support.AbstractIntegrationTest;
 
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class AnalyticsServiceIT extends AbstractIntegrationTest {
-    @Autowired
-    AnalyticsService analytics;
-
-    @Autowired
-    AssignmentService assignments;
-
-    @Autowired
-    SubmissionService submissions;
-
-    @Autowired
-    QuizSubmissionService attempts;
-
-    @Autowired
-    ProgressService progress;
-
-    @Autowired
-    ReviewService reviews;
-
-    @Autowired
-    EnrollmentService enrollments;
-
-    @Autowired
-    ModuleService modules;
-
-    @Autowired
-    CourseModuleRepository moduleRepository;
-
-    @Autowired
-    CourseRepository courses;
-
-    @Autowired
-    EntityManagerFactory emf;
+    private final AnalyticsService analytics;
+    private final AssignmentService assignments;
+    private final SubmissionService submissions;
+    private final QuizSubmissionService attempts;
+    private final ProgressService progress;
+    private final ReviewService reviews;
+    private final EnrollmentService enrollments;
+    private final ModuleService modules;
+    private final CourseModuleRepository moduleRepository;
+    private final CourseRepository courses;
+    private final EntityManagerFactory emf;
 
     @Test
     @DisplayName("Успеваемость разделяется по курсам и учитывает только оценённые задания и разные сданные тесты")

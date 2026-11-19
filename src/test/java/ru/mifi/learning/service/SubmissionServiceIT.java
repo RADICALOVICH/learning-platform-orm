@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.Clock;
 import java.time.Instant;
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,18 +23,11 @@ import ru.mifi.learning.support.AbstractIntegrationTest;
 import ru.mifi.learning.support.MutableClock;
 
 @RecordApplicationEvents
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class SubmissionServiceIT extends AbstractIntegrationTest {
-    @Autowired
-    ApplicationEvents events;
-
-    @Autowired
-    SubmissionService solutions;
-
-    @Autowired
-    CourseService courses;
-
-    @Autowired
-    AssignmentService assignments;
+    private final SubmissionService solutions;
+    private final CourseService courses;
+    private final AssignmentService assignments;
 
     @TestBean(name = "clock", methodName = "testClock")
     Clock clock;
@@ -44,7 +38,7 @@ class SubmissionServiceIT extends AbstractIntegrationTest {
 
     @Test
     @DisplayName("Сдача в архивном курсе допускает опоздание, повторную оценку и проверяет диапазон")
-    void deadline() {
+    void deadline(@Autowired ApplicationEvents events) {
         var c = data.publishedCourseWithLessons(1);
         var module = c.getModules().getFirst();
         var lesson = module.getLessons().getFirst();

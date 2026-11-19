@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,25 +20,16 @@ import ru.mifi.learning.service.event.CourseCompletedEvent;
 import ru.mifi.learning.support.AbstractIntegrationTest;
 
 @RecordApplicationEvents
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class ProgressServiceIT extends AbstractIntegrationTest {
-    @Autowired
-    ProgressService progress;
-
-    @Autowired
-    CourseService courses;
-
-    @Autowired
-    LessonService lessons;
-
-    @Autowired
-    QuizSubmissionService attempts;
-
-    @Autowired
-    ApplicationEvents events;
+    private final ProgressService progress;
+    private final CourseService courses;
+    private final LessonService lessons;
+    private final QuizSubmissionService attempts;
 
     @Test
     @DisplayName("Отметка идемпотентна; завершивший студент остаётся в статусе COMPLETED")
-    void mark() {
+    void mark(@Autowired ApplicationEvents events) {
         var c = data.publishedCourseWithLessons(1);
         var module = c.getModules().getFirst();
         var lesson = module.getLessons().getFirst();
@@ -77,7 +69,7 @@ class ProgressServiceIT extends AbstractIntegrationTest {
 
     @Test
     @DisplayName("Успешная попытка после последнего урока завершает курс")
-    void lastQuiz() {
+    void lastQuiz(@Autowired ApplicationEvents events) {
         var c = data.publishedCourseWithLessons(1);
         var module = c.getModules().getFirst();
         var lesson = module.getLessons().getFirst();

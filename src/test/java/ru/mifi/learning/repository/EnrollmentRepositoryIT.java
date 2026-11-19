@@ -3,6 +3,7 @@ package ru.mifi.learning.repository;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import lombok.RequiredArgsConstructor;
 import org.hibernate.Hibernate;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,9 +18,9 @@ import ru.mifi.learning.domain.entity.LessonProgress;
 import ru.mifi.learning.support.AbstractRepositoryTest;
 import ru.mifi.learning.support.TestDataFactory;
 
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class EnrollmentRepositoryIT extends AbstractRepositoryTest {
-    @Autowired
-    EnrollmentRepository enrollments;
+    private final EnrollmentRepository enrollments;
 
     @Test
     @DisplayName("Повторная запись того же студента на курс запрещена")
@@ -40,7 +41,7 @@ class EnrollmentRepositoryIT extends AbstractRepositoryTest {
         data.enrollment(course);
         flushAndClear();
         queries.reset();
-        var page = enrollments.findByCourseIdWithStudent(course.getId(), PageRequest.of(0, 1, Sort.by("id")));
+        var page = enrollments.findWithStudentByCourseId(course.getId(), PageRequest.of(0, 1, Sort.by("id")));
         assertThat(page.getTotalElements()).isEqualTo(2);
         assertThat(page.getContent()).hasSize(1);
         assertThat(Hibernate.isInitialized(page.getContent().getFirst().getStudent()))

@@ -4,6 +4,7 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,9 +17,9 @@ import ru.mifi.learning.exception.NotFoundException;
 import ru.mifi.learning.service.CourseService;
 
 @WebMvcTest(CourseController.class)
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class CourseControllerTest {
-    @Autowired
-    MockMvc mvc;
+    private final MockMvc mvc;
 
     @MockitoBean
     CourseService service;

@@ -3,6 +3,7 @@ package ru.mifi.learning.repository;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import lombok.RequiredArgsConstructor;
 import org.hibernate.Hibernate;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -17,9 +18,9 @@ import ru.mifi.learning.domain.entity.LessonProgressId;
 import ru.mifi.learning.support.AbstractRepositoryTest;
 import ru.mifi.learning.support.TestDataFactory;
 
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class LessonProgressRepositoryIT extends AbstractRepositoryTest {
-    @Autowired
-    LessonProgressRepository progress;
+    private final LessonProgressRepository progress;
 
     @Test
     @DisplayName("Составной первичный ключ исключает повтор пары запись–урок")

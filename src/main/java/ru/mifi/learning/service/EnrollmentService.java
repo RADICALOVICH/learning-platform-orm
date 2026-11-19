@@ -69,7 +69,7 @@ public class EnrollmentService {
     }
 
     public PageResponse<EnrolledStudentResponse> students(long id, Pageable pageable) {
-        var page = enrollments.findByCourseIdWithStudent(id, pageable);
+        var page = enrollments.findWithStudentByCourseId(id, pageable);
         if (page.isEmpty() && !courses.existsById(id)) {
             throw NotFoundException.of("Course", id);
         }

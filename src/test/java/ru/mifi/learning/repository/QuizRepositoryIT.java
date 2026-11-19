@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
+import lombok.RequiredArgsConstructor;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,12 +21,10 @@ import ru.mifi.learning.repository.projection.ModuleQuizId;
 import ru.mifi.learning.support.AbstractRepositoryTest;
 import ru.mifi.learning.support.TestDataFactory;
 
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 class QuizRepositoryIT extends AbstractRepositoryTest {
-    @Autowired
-    QuizRepository quizzes;
-
-    @Autowired
-    QuizSubmissionRepository attempts;
+    private final QuizRepository quizzes;
+    private final QuizSubmissionRepository attempts;
 
     @Test
     @DisplayName("Вопросы и варианты сохраняются каскадом")
