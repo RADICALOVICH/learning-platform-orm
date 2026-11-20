@@ -266,6 +266,63 @@ class HappyPathE2EIT extends AbstractIntegrationTest {
         assertThat(error.get("code").asText()).isEqualTo("INVALID_PAGE_OFFSET");
     }
 
+    @Test
+    @DisplayName("Ошибочные JSON-типы отклоняются до изменения задания, оценки и ключа викторины")
+    void rejectCoercedJsonTypes() {
+        var course = data.publishedCourseWithLessons(1);
+        var module = course.getModules().getFirst();
+        var assignment = post(
+                "/lessons/" + module.getLessons().getFirst().getId() + "/assignments",
+                Map.of("title", "Задание", "description", "Описание"),
+                201);
+        var assignmentPath = "/assignments/" + assignment.get("id");
+        for (Object title : List.of(false, 123, 1.5)) {
+            var error = exchange(
+                    HttpMethod.PUT, assignmentPath, Map.of("title", title, "description", "Описание"), 400, null);
+            assertThat(error.path("code").asText()).isEqualTo("MALFORMED_REQUEST");
+        }
+        assertThat(get(assignmentPath).get("title").asText()).isEqualTo("Задание");
+
+        var student = data.enrollment(course).getStudent().getId();
+        var solution = post(assignmentPath + "/submissions", Map.of("studentId", student, "content", "Ответ"), 201);
+        String submission = "/submissions/" + solution.get("id");
+        exchange(HttpMethod.PUT, submission + "/grade", Map.of("score", 9), 200, null);
+        var error = exchange(HttpMethod.PUT, submission + "/grade", Map.of("score", "7"), 400, null);
+        assertThat(error.path("code").asText()).isEqualTo("MALFORMED_REQUEST");
+        assertThat(get(submission).get("score").asInt()).isEqualTo(9);
+
+        var quiz = data.quizWithQuestions(module, 1);
+        String full = "/quizzes/" + quiz.getId() + "/full";
+        var before = get(full);
+        String question = "/questions/" + before.at("/questions/0/id");
+        for (Object flag : List.of(2, 0, "true", "")) {
+            var options = List.of(Map.of("text", "А", "correct", flag), Map.of("text", "Б", "correct", false));
+            var response = exchange(
+                    HttpMethod.PUT,
+                    question,
+                    Map.of("text", "Вопрос", "type", "SINGLE_CHOICE", "options", options),
+                    400,
+                    null);
+            assertThat(response.path("code").asText()).isEqualTo("MALFORMED_REQUEST");
+        }
+        assertThat(get(full)).isEqualTo(before);
+    }
+
+    @Test
+    @DisplayName("Ошибочные параметры страниц отклоняются до подстановки значений по умолчанию")
+    void invalidPageParameters() {
+        for (String query :
+                List.of("page=abc", "page=-1", "page=", "size=0", "size=-1", "size=abc", "size=2147483648")) {
+            var response = exchange(HttpMethod.GET, "/courses?" + query, null, 400, null);
+            assertThat(response.path("code").asText()).as(query).isEqualTo("INVALID_PAGE_PARAMETER");
+        }
+        var overflow = exchange(HttpMethod.GET, "/users?page=2147483648&size=1", null, 400, null);
+        assertThat(overflow.path("code").asText()).isEqualTo("INVALID_PAGE_OFFSET");
+        var defaults = get("/courses");
+        assertThat(defaults.path("page").asInt()).isZero();
+        assertThat(defaults.path("size").asInt()).isEqualTo(20);
+    }
+
     private long user(String name, String role) {
         return created("/users", Map.of("email", name + "@example.test", "fullName", name, "role", role), "/users/")
                 .get("id")
