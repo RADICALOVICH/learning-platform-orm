@@ -59,6 +59,31 @@ class QuizServiceIT extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("Противоречивые варианты отклоняются при создании теста, добавлении и правке вопроса")
+    void conflictingOptionLabels() {
+        var module = data.publishedCourseWithLessons(1).getModules().getFirst();
+        var ambiguous = new QuestionRequest(
+                "Сколько будет 2+2?",
+                QuestionType.SINGLE_CHOICE,
+                1,
+                List.of(new OptionRequest(" 4", false), new OptionRequest("4 ", true)));
+        assertThatThrownBy(() -> quizzes.create(
+                        module.getId(), new CreateQuizRequest("Тест", null, null, null, null, List.of(ambiguous))))
+                .extracting("code")
+                .isEqualTo("INVALID_QUESTION");
+        var quiz = quizzes.create(
+                module.getId(), new CreateQuizRequest("Тест", null, null, null, null, List.of(question())));
+        assertThatThrownBy(() -> quizzes.add(quiz.id(), ambiguous))
+                .extracting("code")
+                .isEqualTo("INVALID_QUESTION");
+        assertThatThrownBy(
+                        () -> quizzes.changeQuestion(quiz.questions().getFirst().id(), ambiguous))
+                .extracting("code")
+                .isEqualTo("INVALID_QUESTION");
+        assertThat(quizzes.teacher(quiz.id())).isEqualTo(quiz);
+    }
+
+    @Test
     @DisplayName("Поиск теста различает неизвестный модуль и существующий модуль без теста")
     void missingModuleQuiz() {
         var module = data.publishedCourseWithLessons(1).getModules().getFirst();

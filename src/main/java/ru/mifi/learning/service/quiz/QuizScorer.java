@@ -34,6 +34,7 @@ public final class QuizScorer {
             marks.add(new Mark(question.questionId(), correct, points));
         }
         int percent = (int) Math.round(100.0 * earned / maximum);
-        return new Score(earned, (int) maximum, percent, percent >= passingPercent, List.copyOf(marks));
+        boolean passed = 100L * earned >= passingPercent * maximum;
+        return new Score(earned, (int) maximum, percent, passed, List.copyOf(marks));
     }
 }

@@ -14,7 +14,6 @@ import ru.mifi.learning.domain.entity.CourseModule;
 import ru.mifi.learning.domain.entity.Tag;
 import ru.mifi.learning.domain.entity.User;
 import ru.mifi.learning.domain.enums.CourseStatus;
-import ru.mifi.learning.domain.enums.Role;
 import ru.mifi.learning.dto.common.PageResponse;
 import ru.mifi.learning.dto.course.CourseDetailsResponse;
 import ru.mifi.learning.dto.course.CourseStructureResponse;
@@ -163,7 +162,7 @@ public class CourseService {
 
     private User teacher(long id) {
         var user = users.lockById(id).orElseThrow(() -> NotFoundException.of("User", id));
-        if (user.getRole() == Role.STUDENT) {
+        if (!user.getRole().canTeach()) {
             throw new BusinessRuleException("USER_NOT_TEACHER", "Курс может вести преподаватель или администратор");
         }
         return user;

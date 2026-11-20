@@ -64,9 +64,7 @@ public class UserService {
         if (!user.getEmail().equalsIgnoreCase(request.email().strip())) {
             ensureEmailAvailable(request.email());
         }
-        if (user.getRole() != request.role()
-                && (user.getRole() == Role.TEACHER || request.role() == Role.STUDENT)
-                && courses.existsByTeacherId(id)) {
+        if (user.getRole() != request.role() && !request.role().canTeach() && courses.existsByTeacherId(id)) {
             throw new ConflictException("USER_HAS_DEPENDENCIES", "Сначала передайте курсы другому преподавателю");
         }
         user.setEmail(request.email());

@@ -74,6 +74,23 @@ class UserServiceIT extends AbstractIntegrationTest {
     }
 
     @Test
+    @DisplayName("При повышении преподавателя до администратора курс сохраняет владельца")
+    void promotesCourseOwner(@Autowired CourseService courses) {
+        var course = data.publishedCourseWithLessons(1);
+        var teacher = course.getTeacher();
+        var updated = users.update(
+                teacher.getId(), new UpdateUserRequest(teacher.getEmail(), teacher.getFullName(), Role.ADMIN));
+        assertThat(updated.role()).isEqualTo(Role.ADMIN);
+        assertThat(courses.get(course.getId()).teacher()).isEqualTo(updated);
+        assertThatThrownBy(() -> users.update(
+                        teacher.getId(),
+                        new UpdateUserRequest(teacher.getEmail(), teacher.getFullName(), Role.STUDENT)))
+                .extracting("code")
+                .isEqualTo("USER_HAS_DEPENDENCIES");
+        assertThat(users.get(teacher.getId()).role()).isEqualTo(Role.ADMIN);
+    }
+
+    @Test
     @DisplayName("Студента с записью на курс нельзя удалить")
     void protectsStudent() {
         var enrollment = data.enrollment(data.publishedCourseWithLessons(1));

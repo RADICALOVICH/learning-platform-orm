@@ -156,14 +156,28 @@ public class QuizService {
         return question;
     }
 
-    private static void apply(Question question, QuestionRequest input) {
-        long correct = input.options().stream().filter(OptionRequest::correct).count();
+    private static void validateOptions(QuestionRequest input) {
+        var correctByText = new HashMap<String, Boolean>();
+        int correct = 0;
+        for (var option : input.options()) {
+            Boolean previous = correctByText.putIfAbsent(option.text().strip(), option.correct());
+            if (previous != null && !previous.equals(option.correct())) {
+                throw new BusinessRuleException(
+                        "INVALID_QUESTION",
+                        "Варианты с одинаковым текстом должны иметь одинаковый признак правильности");
+            }
+            if (option.correct()) correct++;
+        }
         if (input.options().size() < 2
                 || correct == 0
                 || (input.type() == QuestionType.SINGLE_CHOICE && correct != 1)) {
             throw new BusinessRuleException(
                     "INVALID_QUESTION", "Нужны два варианта и корректный набор правильных ответов");
         }
+    }
+
+    private static void apply(Question question, QuestionRequest input) {
+        validateOptions(input);
         question.setText(input.text());
         question.setType(input.type());
         question.setPoints(input.points() == null ? 1 : input.points());

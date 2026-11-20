@@ -11,6 +11,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.event.ApplicationEvents;
 import org.springframework.test.context.event.RecordApplicationEvents;
 import ru.mifi.learning.domain.entity.AnswerOption;
+import ru.mifi.learning.domain.enums.EnrollmentStatus;
+import ru.mifi.learning.domain.enums.QuestionType;
+import ru.mifi.learning.dto.enrollment.StudentRequest;
+import ru.mifi.learning.dto.quiz.CreateQuizRequest;
+import ru.mifi.learning.dto.quiz.OptionRequest;
+import ru.mifi.learning.dto.quiz.QuestionRequest;
 import ru.mifi.learning.dto.quiz.QuizAnswerRequest;
 import ru.mifi.learning.dto.quiz.TakeQuizRequest;
 import ru.mifi.learning.dto.quiz.UpdateQuizRequest;
@@ -50,6 +56,34 @@ class QuizSubmissionServiceIT extends AbstractIntegrationTest {
         assertThatThrownBy(() -> attempts.submit(quiz.getId(), right)).isInstanceOf(ConflictException.class);
         attempts.delete(fail.id());
         assertThat(attempts.submit(quiz.getId(), right).attemptNumber()).isEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("При пороге 100% результат 199 из 200 оставляет курс активным до полной сдачи")
+    void completionUsesExactPassingScore(@Autowired ProgressService progress) {
+        var course = data.publishedCourseWithLessons(1);
+        var module = course.getModules().getFirst();
+        long student = data.enrollment(course).getStudent().getId();
+        var options = List.of(new OptionRequest("Да", true), new OptionRequest("Нет", false));
+        var questions = List.of(
+                new QuestionRequest("Первый", QuestionType.SINGLE_CHOICE, 199, options),
+                new QuestionRequest("Второй", QuestionType.SINGLE_CHOICE, 1, options));
+        var quiz = quizzes.create(module.getId(), new CreateQuizRequest("Тест", null, null, 100, null, questions));
+        progress.mark(module.getLessons().getFirst().getId(), new StudentRequest(student));
+        var answers = quiz.questions().stream()
+                .map(q -> new QuizAnswerRequest(
+                        q.id(), List.of(q.options().getFirst().id())))
+                .toList();
+        var partial = attempts.submit(quiz.id(), new TakeQuizRequest(student, List.of(answers.getFirst())));
+        assertThat(partial.score()).isEqualTo(199);
+        assertThat(partial.percent()).isEqualTo(100);
+        assertThat(attempts.get(partial.id()).passed()).isFalse();
+        assertThat(progress.get(course.getId(), student).status()).isEqualTo(EnrollmentStatus.ACTIVE);
+
+        assertThat(attempts.submit(quiz.id(), new TakeQuizRequest(student, answers))
+                        .passed())
+                .isTrue();
+        assertThat(progress.get(course.getId(), student).status()).isEqualTo(EnrollmentStatus.COMPLETED);
     }
 
     @Test
